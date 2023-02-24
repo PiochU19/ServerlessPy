@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from enum import Enum
-from typing import Callable, get_args, get_origin, Union
 from functools import wraps
+from typing import Callable, Union, get_args, get_origin
 
 
 def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
@@ -51,7 +51,7 @@ class Functions(str, Enum):
     openapi = "openapi"
 
 
-FUNCTIONS_DEFINITIONS: dict[str, Callable[[], None]] = {
+FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {
     "layer": deploy_layer,
     "openapi": generate_openapi,
 }
