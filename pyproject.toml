@@ -1,16 +1,20 @@
-[tool.poetry]
-name = "ServerlessPy"
-version = "0.1.0"
-description = ""
-authors = ["Dominik Pioś <792954018@wp.pl>"]
-license = "MIT"
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.9"
-loguru = "^0.6.0"
-
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "ServerlessPy"
+authors = [{name = "Dominik Pioś", email = "792954018@wp.pl"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: Apache Software License"]
+dynamic = ["version", "description"]
+dependencies = [
+    "loguru==0.6.0",
+]
+
+[project.scripts]
+serverlesspy = "serverlesspy.cli:handler"
+
+[project.urls]
+Home = "https://github.com/PiochU19/ServerlessPy"

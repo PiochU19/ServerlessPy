@@ -1,1 +1,3 @@
-from .spy import SpyAPI, SpyRouter
+"""An amazing SPY package!"""
+
+__version__ = "0.1.0"
