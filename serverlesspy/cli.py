@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
-from enum import Enum
 from functools import wraps
 from typing import Callable, get_args
 
 from serverlesspy import SpyAPI
+from serverlesspy.core.schemas import Functions
 from serverlesspy.helpers import types
+from serverlesspy.helpers.documentation import get_openapi
 from serverlesspy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
 
@@ -52,19 +53,14 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
 
 @unpack_args
 def deploy_layer(app: SpyAPI) -> None:
-    print(app.routes)
     print("Hi from layer")
 
 
 @unpack_args
 def generate_openapi(app: SpyAPI) -> None:
     print(app.routes)
-    print("Hi from openapi")
-
-
-class Functions(str, Enum):
-    layer = "layer"
-    openapi = "openapi"
+    # openapi = get_openapi(app.routes)
+    # print(openapi)
 
 
 FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {
