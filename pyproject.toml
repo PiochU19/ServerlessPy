@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-serverlesspy = "serverlesspy.cli:cli_handler"
+serverlesspy = "serverlesspy.helpers.cli:cli_handler"
 
 [project.urls]
 Home = "https://github.com/PiochU19/ServerlessPy"

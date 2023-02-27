@@ -45,23 +45,25 @@ class _SPY:
         response_class: Union[type[BaseModel], None],
         status_code: Union[int, None],
         tags: Union[list[str], None],
-        name: Union[str, None],
+        summary: Union[str, None],
         description: Union[str, None],
     ) -> Decorator:
-        self.add_route(
-            path,
-            method,
-            SpyRoute(
-                method=method,  # pass method for root validator
-                response_class=response_class,
-                status_code=status_code,
-                tags=tags,
-                name=name,
-                description=description,
-            ),
-        )
-
         def decorator(func: LH) -> LH:
+            self.add_route(
+                path,
+                method,
+                SpyRoute(
+                    method=method,
+                    path=path,
+                    handler=func,
+                    response_class=response_class,
+                    status_code=status_code,
+                    tags=tags,
+                    summary=summary,
+                    description=description,
+                ),
+            )
+
             @wraps(func)
             def wrapper(*args, **kwargs) -> LRT:
                 return func(*args, **kwargs)
@@ -77,16 +79,16 @@ class _SPY:
         response_class: Union[type[BaseModel], None] = None,
         status_code: Union[int, None] = None,
         tags: Union[list[str], None] = None,
-        name: Union[str, None] = None,
+        summary: Union[str, None] = None,
         description: Union[str, None] = None,
     ) -> Decorator:
         return self.route(
-            method=Methods.get,
+            method=Methods.GET,
             path=path,
             response_class=response_class,
             status_code=status_code,
             tags=tags,
-            name=name,
+            summary=summary,
             description=description,
         )
 
@@ -97,16 +99,16 @@ class _SPY:
         response_class: Union[type[BaseModel], None] = None,
         status_code: Union[int, None] = None,
         tags: Union[list[str], None] = None,
-        name: Union[str, None] = None,
+        summary: Union[str, None] = None,
         description: Union[str, None] = None,
     ) -> Decorator:
         return self.route(
-            method=Methods.post,
+            method=Methods.POST,
             path=path,
             response_class=response_class,
             status_code=status_code,
             tags=tags,
-            name=name,
+            summary=summary,
             description=description,
         )
 
@@ -117,29 +119,32 @@ class _SPY:
         response_class: Union[type[BaseModel], None] = None,
         status_code: Union[int, None] = None,
         tags: Union[list[str], None] = None,
-        name: Union[str, None] = None,
+        summary: Union[str, None] = None,
         description: Union[str, None] = None,
     ) -> Decorator:
         return self.route(
-            method=Methods.delete,
+            method=Methods.DELETE,
             path=path,
             response_class=response_class,
             status_code=status_code,
             tags=tags,
-            name=name,
+            summary=summary,
             description=description,
         )
 
 
 class SpyAPI(_SPY):
-    def __init__(self: Self, prefix: Union[str, None] = None) -> None:
+    def __init__(
+        self: Self,
+        *,
+        title: Union[str, None] = None,
+        version: Union[str, None] = None,
+        prefix: Union[str, None] = None,
+    ) -> None:
         super().__init__(prefix)
 
-    def deploy_layer(self: Self) -> None:
-        ...
-
-    def generate_openapi(self: Self) -> None:
-        ...
+        self.title = title or "My API"
+        self.version = version or "v0.0.1"
 
 
 class SpyRouter(_SPY):

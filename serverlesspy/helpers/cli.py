@@ -1,3 +1,4 @@
+import json
 from argparse import ArgumentParser
 from functools import wraps
 from typing import Callable, get_args
@@ -57,10 +58,11 @@ def deploy_layer(app: SpyAPI) -> None:
 
 
 @unpack_args
-def generate_openapi(app: SpyAPI) -> None:
-    print(app.routes)
-    # openapi = get_openapi(app.routes)
-    # print(openapi)
+def generate_openapi(app: SpyAPI, path: str) -> None:
+    open_api = get_openapi(app.title, app.version, app.routes)
+
+    with open(f"./{path}", "w") as file:
+        json.dump(open_api, file)
 
 
 FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {

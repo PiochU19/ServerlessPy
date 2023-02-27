@@ -1,39 +1,79 @@
-from openapi_schema_pydantic import (
-    Info,
-    OpenAPI,
-    Operation,
-    PathItem,
-    RequestBody,
-    Response,
+import json
+from typing import Any, Union
+
+from openapi_schema_pydantic.v3.v3_0_3 import OpenAPI
+from openapi_schema_pydantic.v3.v3_0_3.util import (
+    PydanticSchema,
+    construct_open_api_with_schema_class,
 )
-from openapi_schema_pydantic.util import PydanticSchema
 
 from serverlesspy.core.schemas import Methods, SpyRoute
 
 
-def _get_path_item(route: SpyRoute) -> PathItem:
-    operation_kwargs = {
-        "tags": route.tags,
-        "summary": "Endpoint summary",
-        "description": route.description,
-        "requestBody": RequestBody(
-            content={
-                "application/json": {
-                    "schema": PydanticSchema(schema_class=route.response_class)
-                }
-            },
-            required=True,
-        ),
-        "responses": "",
+def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
+    item = {
+        "responses": {
+            route.status_code: {
+                "description": "Successful response",
+                "content": {
+                    "application/json": {
+                        "schema": PydanticSchema(schema_class=route.response_class)
+                        if route.response_class
+                        else {}
+                    }
+                },
+            }
+        }
     }
-    if route.method == Methods.get:
-        return PathItem(get=Operation(**operation_kwargs))
-    if route.method == Methods.post:
-        return PathItem(post=Operation(**operation_kwargs))
+    if route.tags:
+        item["tags"] = route.tags  # type: ignore
+    if route.summary:
+        item["summary"] = route.summary  # type: ignore
+    if route.description:
+        item["description"] = route.description  # type: ignore
+    if method not in (Methods.GET, Methods.DELETE):
+        item.update(
+            {
+                "requestBody": {
+                    "content": {  # type: ignore
+                        "application/json": {
+                            "schema": PydanticSchema(schema_class=route.request_body)
+                            if route.request_body
+                            else {}
+                        }
+                    }
+                }
+            }
+        )
+
+    return item
 
 
-def get_openapi(routes: list[SpyRoute]) -> None:
-    return OpenAPI(
-        info=Info(title="My own API", version="0.1.0", summary="Short description"),
-        paths={route.path: _get_path_item(route) for route in routes},
+def construct_base_open_api(
+    title: str, version: Union[str, None], routes: dict[str, dict[Methods, SpyRoute]]
+) -> OpenAPI:
+    info = {"title": title}
+    if version is not None:
+        info["version"] = version
+    return OpenAPI.parse_obj(
+        {
+            "info": info,
+            "paths": {
+                path: {
+                    method: _get_path_item(method, route)
+                    for method, route in route_dict.items()
+                }
+                for path, route_dict in routes.items()
+            },
+        }
+    )
+
+
+def get_openapi(
+    title: str, version: Union[str, None], routes: dict[str, dict[Methods, SpyRoute]]
+) -> dict[str, Any]:
+    return json.loads(
+        construct_open_api_with_schema_class(
+            construct_base_open_api(title, version, routes)
+        ).json(by_alias=True, exclude_none=True, indent=2)
     )
