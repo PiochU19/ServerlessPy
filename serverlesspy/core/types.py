@@ -3,7 +3,7 @@ from typing import TypeVar, Union, get_args, get_origin
 TypeHint = TypeVar("TypeHint")
 
 
-def is_required(type_hint: type[TypeHint]) -> bool:
+def is_type_required(type_hint: type[TypeHint]) -> bool:
     """
     Returns bool value, whether argument's type hint is required:
     str, int, Union[str, int]...

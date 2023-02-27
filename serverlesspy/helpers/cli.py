@@ -5,7 +5,7 @@ from typing import Callable, get_args
 
 from serverlesspy import SpyAPI
 from serverlesspy.core.schemas import Functions
-from serverlesspy.helpers import types
+from serverlesspy.core.utils import is_type_required
 from serverlesspy.helpers.documentation import get_openapi
 from serverlesspy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
@@ -29,7 +29,7 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
                     print(e)
                     return
 
-            is_required = types.is_required(argument_type_hint)
+            is_required = is_type_required(argument_type_hint)
             argument_type = (
                 argument_type_hint if is_required else get_args(argument_type_hint)[0]
             )
