@@ -1,3 +1,4 @@
+import inspect
 from enum import Enum
 from typing import Any, Callable, TypeVar, Union
 
@@ -48,9 +49,7 @@ class SpyRoute(BaseModel):
     description: Union[str, None]
     request_body: Union[type[BaseModel], None]
     response_class: Union[type[BaseModel], None]
-    path_params: list[ParamSchema] = Field(default_factory=list)
-    query_string_params: list[ParamSchema] = Field(default_factory=list)
-    headers: list[ParamSchema] = Field(default_factory=list)
+    params: list[ParamSchema] = Field(default_factory=list)
 
     @root_validator(pre=True)
     def set_status_code(
@@ -77,7 +76,15 @@ class SpyRoute(BaseModel):
 
         path_params = get_path_param_names(path)
         handler_args = resolve_handler_args(handler)
-        if handler_args.count != len(handler.__annotations__):
+
+        args = inspect.signature(handler).parameters
+        args_count = len(args)
+        # exclude lambdas event and context from count
+        if "event" in args:
+            args_count -= 1
+        if "context" in args:
+            args_count -= 1
+        if handler_args.count != args_count:
             raise RouteDefinitionException(
                 f'Unrecognized params for {method.upper()} method on "{path}" path!'
             )
@@ -105,12 +112,8 @@ class SpyRoute(BaseModel):
         if handler_args.request_body:
             values["request_body"] = handler_args.request_body
 
-        for field_name, attr_name in (
-            ("path_params", "path"),
-            ("query_string_params", "query"),
-            ("headers", "header"),
-        ):
-            values[field_name] = [
+        for attr_name in ("path", "query", "header"):
+            values["params"] += [
                 param for _, param in getattr(handler_args, attr_name).items()
             ]
 

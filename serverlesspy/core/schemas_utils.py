@@ -13,7 +13,12 @@ LH = TypeVar("LH", bound=Callable[..., Any])
 
 class ParamSchema(BaseModel):
     name: str
-    type_: type
+    arg_name: str
+    in_: Param
+    annotation: type
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class HandlerArgs(BaseModel):
@@ -63,7 +68,10 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
                 )
 
             params[param.in_][param_name] = ParamSchema(
-                name=param_name, type_=arg_value.annotation
+                name=param_name,
+                in_=arg_value.default,
+                arg_name=arg_name,
+                annotation=arg_value.annotation,
             )
 
     return HandlerArgs(
