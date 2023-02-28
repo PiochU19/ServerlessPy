@@ -1,5 +1,7 @@
 import inspect
+import os
 from enum import Enum
+from pathlib import Path
 from typing import Any, Callable, Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field, root_validator, validator
@@ -184,19 +186,38 @@ class VPC(BaseModel):
 class Function(BaseModel):
     handler: str
     module: str
-    events: list[dict[str, dict[str, str]]]
+    events: list[dict[str, Any]]
     layers: list[Union[str, CloudFormationRef, JSONFileRef]]
-    environment: dict[str, Any]
+    environment: Union[dict[str, Any], None] = Field(None)
+
+    @staticmethod
+    def generate_rel_path_for_function(route: SpyRoute) -> str:
+        return os.path.relpath(
+            Path(route.handler.__code__.co_filename), Path().resolve()
+        )
+
+    @classmethod
+    def generate_unique_id(cls: type[Self], *, route: SpyRoute, method: Methods) -> str:
+        rel_path = cls.generate_rel_path_for_function(route)
+        return (
+            f'{"-".join(rel_path.replace(".py", "").split(os.sep))}-'
+            f'{route.handler.__name__.replace("_", "-")}-{method}'
+        )
 
     @classmethod
     def from_route(
         cls: type[Self], *, route: SpyRoute, path: str, method: Methods
     ) -> Self:
-        # TODO: finish from route
+        rel_path = cls.generate_rel_path_for_function(route)
+        http_api_event: dict[str, Any] = {"path": path, "method": method.upper()}
+        if route.authorizer:
+            http_api_event["authorizer"] = {"name": route.authorizer}
+
         return cls(
-            handler="index.some_another_handler_xd",
-            module="lambdas/cognito/get",
-            events=[{"httpApi": {"path": path, "method": method}}],
+            handler=f'{rel_path.split(os.sep)[-1].replace(".py", "")}.{route.handler.__name__}',
+            module="/".join(rel_path.split(os.sep)[:-1]),
+            events=[{"httpApi": http_api_event}],
+            layers=["xd"],
         )
 
 

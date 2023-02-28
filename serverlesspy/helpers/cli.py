@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Callable, get_args
 
 from serverlesspy import SpyAPI
+from serverlesspy.core.exceptions import RouteDefinitionException
 from serverlesspy.core.schemas import Function, Functions
 from serverlesspy.core.utils import is_type_required
 from serverlesspy.helpers.documentation import get_openapi
@@ -70,12 +71,27 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
     if not path.endswith(".yml"):
         raise WrongArgumentException("File is not YAML file.")
 
-    functions = []
+    functions: dict[str, Function] = {}
     for route_path, route_dict in app.routes.items():
         for method, route in route_dict.items():
-            functions.append(
-                Function.from_route(route=route, method=method, path=route_path)
+            if (
+                route.authorizer is not None
+                and route.authorizer
+                not in app.config.provider.httpApi.authorizers.keys()
+            ):
+                raise RouteDefinitionException(
+                    f"Authorizer {route.authorizer} not defined"
+                )
+
+            fuid = Function.generate_unique_id(route=route, method=method)
+            if fuid in functions.keys():
+                raise RouteDefinitionException(f"{fuid} already exists.")
+
+            functions[fuid] = Function.from_route(
+                route=route, method=method, path=route_path
             )
+
+    app.config.functions = functions
 
     with open(path, "w") as file:
         file.write(app.config.yaml(exclude_none=True))
