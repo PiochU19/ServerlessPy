@@ -1,8 +1,9 @@
 import inspect
 from enum import Enum
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, Callable, Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field, root_validator, validator
+from pydantic_yaml import YamlModel
 from typing_extensions import Self  # type: ignore
 
 from serverlesspy.core.exceptions import RouteDefinitionException
@@ -37,6 +38,7 @@ DEFAULT_STATUS_CODES = {
 class Functions(str, Enum):
     LAYER = "layer"
     OPENAPI = "openapi"
+    SLS = "sls"
 
 
 class SpyRoute(BaseModel):
@@ -50,6 +52,8 @@ class SpyRoute(BaseModel):
     request_body: Union[type[BaseModel], None]
     response_class: Union[type[BaseModel], None]
     params: list[ParamSchema] = Field(default_factory=list)
+    use_vpc: bool = Field(True)
+    authorizer: Union[str, None] = Field(None)
 
     @root_validator(pre=True)
     def set_status_code(
@@ -118,3 +122,110 @@ class SpyRoute(BaseModel):
             ]
 
         return values
+
+
+class _CloudFormationRef(BaseModel):
+    stack_name: str
+    export_name: str
+
+    def __str__(self: Self) -> str:
+        return f"${{cf:{self.stack_name}-${{opt:stage}}.{self.export_name}}}"
+
+
+class CloudFormationRef(_CloudFormationRef):
+    def __new__(cls: type[Self], *args: list[Any], **kwargs: dict[str, Any]) -> str:  # type: ignore
+        instance = _CloudFormationRef(**kwargs)
+        return str(instance)
+
+
+class _JSONFileRef(BaseModel):
+    file_path: str
+    field: str
+
+    def __str__(self: Self) -> str:
+        return f"${{file({self.file_path}):{self.field}}}"
+
+
+class JSONFileRef(_JSONFileRef):
+    def __new__(cls: type[Self], *args: list[Any], **kwargs: dict[str, Any]) -> str:  # type: ignore
+        instance = _JSONFileRef(**kwargs)
+        return str(instance)
+
+
+def build_cognito_issue_url(
+    user_pool_id: Union[str, CloudFormationRef, JSONFileRef]
+) -> str:
+    return f"https://cognito-idp.${{region}}.amazonaws.com/{user_pool_id}"
+
+
+class Authorizers(BaseModel):
+    type: Literal["jwt"] = "jwt"
+    identitySource: str = "$request.header.Authorization"
+    issuerUrl: str
+    audience: list[Union[str, CloudFormationRef, JSONFileRef]]
+
+
+class CORS(BaseModel):
+    allowedHeaders: list[str]
+    exposedResponseHeaders: list[str]
+    allowedMethods: list[str]
+
+
+class HTTPApi(BaseModel):
+    authorizers: dict[str, Authorizers]
+    cors: CORS
+
+
+class VPC(BaseModel):
+    securityGroupIds: list[Union[str, CloudFormationRef, JSONFileRef]]
+    subnetIds: list[Union[str, CloudFormationRef, JSONFileRef]]
+
+
+class Function(BaseModel):
+    handler: str
+    module: str
+    events: list[dict[str, dict[str, str]]]
+    layers: list[Union[str, CloudFormationRef, JSONFileRef]]
+    environment: dict[str, Any]
+
+    @classmethod
+    def from_route(
+        cls: type[Self], *, route: SpyRoute, path: str, method: Methods
+    ) -> Self:
+        # TODO: finish from route
+        return cls(
+            handler="index.some_another_handler_xd",
+            module="lambdas/cognito/get",
+            events=[{"httpApi": {"path": path, "method": method}}],
+        )
+
+
+class Provider(BaseModel):
+    name: str = "aws"
+    runtime: str = "python3.9"
+    region: str
+    role: Union[str, CloudFormationRef, JSONFileRef]
+    httpApi: HTTPApi
+    vpc: Union[VPC, None]
+
+
+class ServerlessConfig(YamlModel):
+    service: str
+    custom: Union[dict[str, Any], None] = Field(None)
+    plugins: list[str]
+    configValidationMode: str = "error"
+    provider: Provider
+    package: dict[str, bool] = Field({"individually": True})
+    functions: Union[dict[str, Function], None] = Field(None)
+
+    @validator("plugins", pre=True)
+    def set_default_plugins(
+        cls: type[Self], value: Union[list[str], None]
+    ) -> list[str]:
+        value = value if value is not None else []
+        value += [
+            "serverless-python-requirements",
+            "serverless-plugin-common-excludes",
+            "serverless-plugin-include-dependencies",
+        ]
+        return list(set(value))

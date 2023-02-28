@@ -1,11 +1,18 @@
 from functools import wraps
-from typing import Union
+from typing import Any, Union
 
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
 from serverlesspy.core.exceptions import RouteDefinitionException
-from serverlesspy.core.schemas import LH, LRT, Decorator, Methods, SpyRoute
+from serverlesspy.core.schemas import (
+    LH,
+    LRT,
+    Decorator,
+    Methods,
+    ServerlessConfig,
+    SpyRoute,
+)
 
 
 class _SPY:
@@ -42,11 +49,13 @@ class _SPY:
         *,
         method: Methods,
         path: str,
+        authorizer: Union[str, None],
         response_class: Union[type[BaseModel], None],
         status_code: Union[int, None],
         tags: Union[list[str], None],
         summary: Union[str, None],
         description: Union[str, None],
+        use_vpc: bool,
     ) -> Decorator:
         def decorator(func: LH) -> LH:
             self.add_route(
@@ -61,6 +70,8 @@ class _SPY:
                     tags=tags,
                     summary=summary,
                     description=description,
+                    authorizer=authorizer,
+                    use_vpc=use_vpc,
                 ),
             )
 
@@ -76,60 +87,72 @@ class _SPY:
         self: Self,
         path: str,
         *,
+        authorizer: Union[str, None] = None,
         response_class: Union[type[BaseModel], None] = None,
         status_code: Union[int, None] = None,
         tags: Union[list[str], None] = None,
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
+        use_vpc: bool = True,
     ) -> Decorator:
         return self.route(
             method=Methods.GET,
             path=path,
+            authorizer=authorizer,
             response_class=response_class,
             status_code=status_code,
             tags=tags,
             summary=summary,
             description=description,
+            use_vpc=use_vpc,
         )
 
     def post(
         self: Self,
         path: str,
         *,
+        authorizer: Union[str, None] = None,
         response_class: Union[type[BaseModel], None] = None,
         status_code: Union[int, None] = None,
         tags: Union[list[str], None] = None,
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
+        use_vpc: bool = True,
     ) -> Decorator:
         return self.route(
             method=Methods.POST,
             path=path,
+            authorizer=authorizer,
             response_class=response_class,
             status_code=status_code,
             tags=tags,
             summary=summary,
             description=description,
+            use_vpc=use_vpc,
         )
 
     def delete(
         self: Self,
         path: str,
         *,
+        authorizer: Union[str, None] = None,
         response_class: Union[type[BaseModel], None] = None,
         status_code: Union[int, None] = None,
         tags: Union[list[str], None] = None,
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
+        use_vpc: bool = True,
     ) -> Decorator:
         return self.route(
             method=Methods.DELETE,
             path=path,
+            authorizer=authorizer,
             response_class=response_class,
             status_code=status_code,
             tags=tags,
             summary=summary,
             description=description,
+            use_vpc=use_vpc,
         )
 
 
@@ -137,6 +160,8 @@ class SpyAPI(_SPY):
     def __init__(
         self: Self,
         *,
+        config: ServerlessConfig,
+        environment: Union[dict[str, Any], None] = None,
         title: Union[str, None] = None,
         version: Union[str, None] = None,
         prefix: Union[str, None] = None,
@@ -145,6 +170,8 @@ class SpyAPI(_SPY):
 
         self.title = title or "My API"
         self.version = version or "v0.0.1"
+        self.config = config
+        self.environment = environment
 
 
 class SpyRouter(_SPY):

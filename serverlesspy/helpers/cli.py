@@ -4,9 +4,10 @@ from functools import wraps
 from typing import Callable, get_args
 
 from serverlesspy import SpyAPI
-from serverlesspy.core.schemas import Functions
+from serverlesspy.core.schemas import Function, Functions
 from serverlesspy.core.utils import is_type_required
 from serverlesspy.helpers.documentation import get_openapi
+from serverlesspy.helpers.exceptions import WrongArgumentException
 from serverlesspy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
 
@@ -64,9 +65,26 @@ def generate_openapi(app: SpyAPI, path: str) -> None:
         json.dump(open_api, file)
 
 
+@unpack_args
+def generate_serverless_file(app: SpyAPI, path: str) -> None:
+    if not path.endswith(".yml"):
+        raise WrongArgumentException("File is not YAML file.")
+
+    functions = []
+    for route_path, route_dict in app.routes.items():
+        for method, route in route_dict.items():
+            functions.append(
+                Function.from_route(route=route, method=method, path=route_path)
+            )
+
+    with open(path, "w") as file:
+        file.write(app.config.yaml(exclude_none=True))
+
+
 FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {
     "layer": deploy_layer,
     "openapi": generate_openapi,
+    "sls": generate_serverless_file,
 }
 
 
