@@ -5,8 +5,8 @@ from typing import Any, Callable, Set, TypeVar, Union
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
-from serverlesspy.core.exceptions import RouteDefinitionException
-from serverlesspy.core.params import Param, ParamType
+from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.params import Param, ParamType
 
 LH = TypeVar("LH", bound=Callable[..., Any])
 

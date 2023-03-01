@@ -1,6 +1,6 @@
 from typing import Union
 
-from serverlesspy.core import params
+from aws_spy.core import params
 
 
 def Query(name: Union[str, None] = None) -> params.Query:

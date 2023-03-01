@@ -9,8 +9,8 @@ from openapi_schema_pydantic.v3.v3_0_3.util import (
     construct_open_api_with_schema_class,
 )
 
-from serverlesspy.core.schemas import Methods, SpyRoute
-from serverlesspy.core.utils import is_type_required
+from aws_spy.core.schemas import Methods, SpyRoute
+from aws_spy.core.utils import is_type_required
 
 SCHEMA_PARAM = {
     int: "integer",

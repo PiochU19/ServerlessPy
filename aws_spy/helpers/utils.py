@@ -2,7 +2,7 @@ import importlib
 import sys
 from pathlib import Path
 
-from serverlesspy import SpyAPI
+from aws_spy import SpyAPI
 
 
 class LoadAppFromStringError(Exception):

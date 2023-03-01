@@ -4,15 +4,8 @@ from typing import Any, Union
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
-from serverlesspy.core.exceptions import RouteDefinitionException
-from serverlesspy.core.schemas import (
-    LH,
-    LRT,
-    Decorator,
-    Methods,
-    ServerlessConfig,
-    SpyRoute,
-)
+from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.schemas import LH, LRT, Decorator, Methods, ServerlessConfig, SpyRoute
 
 
 class _SPY:

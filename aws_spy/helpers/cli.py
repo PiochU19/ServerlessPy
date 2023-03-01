@@ -8,16 +8,16 @@ from functools import wraps
 from pathlib import Path
 from typing import Callable, get_args
 
-from serverlesspy import SpyAPI
-from serverlesspy.core.exceptions import RouteDefinitionException
-from serverlesspy.core.schemas import Function, Functions
-from serverlesspy.core.utils import is_type_required
-from serverlesspy.helpers.documentation import get_openapi
-from serverlesspy.helpers.exceptions import (
+from aws_spy import SpyAPI
+from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.schemas import Function, Functions
+from aws_spy.core.utils import is_type_required
+from aws_spy.helpers.documentation import get_openapi
+from aws_spy.helpers.exceptions import (
     PythonEnvironmentException,
     WrongArgumentException,
 )
-from serverlesspy.helpers.utils import LoadAppFromStringError, load_app_from_string
+from aws_spy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
 
 def unpack_args(function: Callable[..., None]) -> Callable[..., None]:

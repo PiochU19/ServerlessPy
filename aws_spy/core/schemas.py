@@ -7,8 +7,8 @@ from typing import Any, Callable, Literal, TypeVar, Union
 from pydantic import BaseModel, Field, root_validator, validator
 from typing_extensions import Self  # type: ignore
 
-from serverlesspy.core.exceptions import RouteDefinitionException
-from serverlesspy.core.schemas_utils import (
+from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.schemas_utils import (
     ParamSchema,
     get_path_param_names,
     resolve_handler_args,
