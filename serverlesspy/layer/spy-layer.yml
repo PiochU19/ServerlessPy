@@ -1,2 +1,23 @@
 ---
 service: spy-layer
+configValidationMode: error
+
+provider:
+  name: aws
+
+layers:
+  serverlesspy:
+    name: serverlesspy-layer-${opt:stage}
+    description: Layer with ServerlessPy package
+    path: spy
+    compatibleRuntimes:
+      - python3.9
+    retain: false
+
+resources:
+  Outputs:
+    ServerlesspyLayerExport:
+      Value:
+        Ref: ServerlesspyLambdaLayer
+      Export:
+        Name: !Sub "ServerlesspyLambdaLayer-${opt:stage}"

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Callable, Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field, root_validator, validator
-from pydantic_yaml import YamlModel
 from typing_extensions import Self  # type: ignore
 
 from serverlesspy.core.exceptions import RouteDefinitionException
@@ -14,6 +13,15 @@ from serverlesspy.core.schemas_utils import (
     get_path_param_names,
     resolve_handler_args,
 )
+
+# pydantic_yaml won't be in the layer
+try:
+    from pydantic_yaml import YamlModel
+except ImportError:
+
+    class YamlModel(BaseModel):  # type: ignore
+        ...
+
 
 LRT = TypeVar("LRT")  # Lambda Return Type
 LH = Callable[..., LRT]  # Lambda Handler
@@ -44,6 +52,7 @@ class Functions(str, Enum):
 
 
 class SpyRoute(BaseModel):
+    name: str
     path: str
     method: Methods
     handler: LH
@@ -68,8 +77,8 @@ class SpyRoute(BaseModel):
         return values
 
     @validator("summary", pre=True)
-    def set_summary(cls: type[Self], name: Union[str, None]) -> str:
-        return name or "API endpoint"
+    def set_summary(cls: type[Self], summary: Union[str, None]) -> str:
+        return summary or "API endpoint"
 
     @root_validator
     def validate_handler_params(
@@ -194,14 +203,6 @@ class Function(BaseModel):
     def generate_rel_path_for_function(route: SpyRoute) -> str:
         return os.path.relpath(
             Path(route.handler.__code__.co_filename), Path().resolve()
-        )
-
-    @classmethod
-    def generate_unique_id(cls: type[Self], *, route: SpyRoute, method: Methods) -> str:
-        rel_path = cls.generate_rel_path_for_function(route)
-        return (
-            f'{"-".join(rel_path.replace(".py", "").split(os.sep))}-'
-            f'{route.handler.__name__.replace("_", "-")}-{method}'
         )
 
     @classmethod

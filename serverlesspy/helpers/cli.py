@@ -1,6 +1,11 @@
 import json
+import os
+import sys
 from argparse import ArgumentParser
+from distutils.dir_util import copy_tree
+from distutils.file_util import copy_file
 from functools import wraps
+from pathlib import Path
 from typing import Callable, get_args
 
 from serverlesspy import SpyAPI
@@ -8,7 +13,10 @@ from serverlesspy.core.exceptions import RouteDefinitionException
 from serverlesspy.core.schemas import Function, Functions
 from serverlesspy.core.utils import is_type_required
 from serverlesspy.helpers.documentation import get_openapi
-from serverlesspy.helpers.exceptions import WrongArgumentException
+from serverlesspy.helpers.exceptions import (
+    PythonEnvironmentException,
+    WrongArgumentException,
+)
 from serverlesspy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
 
@@ -55,8 +63,49 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
 
 
 @unpack_args
-def deploy_layer(app: SpyAPI) -> None:
-    print("Hi from layer")
+def deploy_layer(stage: str, region: str) -> None:
+    site_packages = None
+    for path in sys.path:
+        if path.endswith("site-packages"):
+            site_packages = path
+
+    if site_packages is None:
+        raise PythonEnvironmentException("Couldn't find site-packages folder.")
+
+    serverlesspy_path = Path(os.path.join(site_packages, "serverlesspy"))
+    layer_path = Path(os.path.join(serverlesspy_path, "layer", "spy", "python"))
+    serverless_layer_path = Path(os.path.join(layer_path, "serverlesspy"))
+    serverless_layer_path.mkdir(parents=True, exist_ok=True)
+
+    for package in ("pydantic",):
+        package_path = Path(os.path.join(site_packages, package))
+        if not package_path.is_dir():
+            raise PythonEnvironmentException(
+                f'Could not find "{package}" package. Make sure it is installed in your current environment.'
+            )
+        copy_tree(str(package_path), os.path.join(layer_path, package))
+
+    copy_file(
+        os.path.join(site_packages, "typing_extensions.py"),
+        os.path.join(layer_path, "typing_extensions.py"),
+    )
+
+    copy_tree(
+        os.path.join(serverlesspy_path, "core"),
+        os.path.join(serverless_layer_path, "core"),
+    )
+    copy_file(
+        os.path.join(serverlesspy_path, "__init__.py"),
+        os.path.join(serverless_layer_path, "__init__.py"),
+    )
+    copy_file(
+        os.path.join(serverlesspy_path, "main.py"),
+        os.path.join(serverless_layer_path, "main.py"),
+    )
+    current_working_dir = os.getcwd()
+    os.chdir(os.path.join(serverlesspy_path, "layer"))
+    os.system(f"serverless deploy -s {stage} -c spy-layer.yml --region {region}")
+    os.chdir(current_working_dir)
 
 
 @unpack_args
@@ -83,11 +132,7 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
                     f"Authorizer {route.authorizer} not defined"
                 )
 
-            fuid = Function.generate_unique_id(route=route, method=method)
-            if fuid in functions.keys():
-                raise RouteDefinitionException(f"{fuid} already exists.")
-
-            functions[fuid] = Function.from_route(
+            functions[route.name] = Function.from_route(
                 route=route, method=method, path=route_path
             )
 

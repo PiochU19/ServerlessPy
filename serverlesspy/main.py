@@ -17,9 +17,11 @@ from serverlesspy.core.schemas import (
 
 class _SPY:
     routes: dict[str, dict[Methods, SpyRoute]]
+    function_unique_ids: set[str]
 
     def __init__(self: Self, prefix: Union[str, None] = None) -> None:
         self.routes = {}
+        self.function_unique_ids = set()
         if isinstance(prefix, str) and not prefix.startswith("/"):
             prefix = "/" + prefix
         self.prefix = prefix or ""
@@ -33,6 +35,10 @@ class _SPY:
         if not path.startswith("/"):
             path = "/" + path
         path = self.prefix + path
+        if route.name in self.function_unique_ids:
+            raise RouteDefinitionException(
+                f"There is already {route.name} lambda registered."
+            )
 
         if path in self.routes.keys() and method in self.routes[path]:
             raise RouteDefinitionException(
@@ -42,6 +48,7 @@ class _SPY:
         if path not in self.routes.keys():
             self.routes[path] = {}
 
+        self.function_unique_ids.add(route.name)
         self.routes[path][method] = route
 
     def route(
@@ -49,6 +56,7 @@ class _SPY:
         *,
         method: Methods,
         path: str,
+        name: str,
         authorizer: Union[str, None],
         response_class: Union[type[BaseModel], None],
         status_code: Union[int, None],
@@ -64,6 +72,7 @@ class _SPY:
                 SpyRoute(
                     method=method,
                     path=path,
+                    name=name,
                     handler=func,
                     response_class=response_class,
                     status_code=status_code,
@@ -86,6 +95,7 @@ class _SPY:
     def get(
         self: Self,
         path: str,
+        name: str,
         *,
         authorizer: Union[str, None] = None,
         response_class: Union[type[BaseModel], None] = None,
@@ -98,6 +108,7 @@ class _SPY:
         return self.route(
             method=Methods.GET,
             path=path,
+            name=name,
             authorizer=authorizer,
             response_class=response_class,
             status_code=status_code,
@@ -110,6 +121,7 @@ class _SPY:
     def post(
         self: Self,
         path: str,
+        name: str,
         *,
         authorizer: Union[str, None] = None,
         response_class: Union[type[BaseModel], None] = None,
@@ -122,6 +134,7 @@ class _SPY:
         return self.route(
             method=Methods.POST,
             path=path,
+            name=name,
             authorizer=authorizer,
             response_class=response_class,
             status_code=status_code,
@@ -134,6 +147,7 @@ class _SPY:
     def delete(
         self: Self,
         path: str,
+        name: str,
         *,
         authorizer: Union[str, None] = None,
         response_class: Union[type[BaseModel], None] = None,
@@ -146,6 +160,7 @@ class _SPY:
         return self.route(
             method=Methods.DELETE,
             path=path,
+            name=name,
             authorizer=authorizer,
             response_class=response_class,
             status_code=status_code,
