@@ -65,6 +65,7 @@ class SpyRoute(BaseModel):
     params: list[ParamSchema] = Field(default_factory=list)
     use_vpc: bool = Field(True)
     authorizer: Union[str, None] = Field(None)
+    layers: list[str] = Field(default_factory=list)
 
     @root_validator(pre=True)
     def set_status_code(
@@ -144,8 +145,8 @@ class _CloudFormationRef(BaseModel):
 
 
 class CloudFormationRef(_CloudFormationRef):
-    def __new__(cls: type[Self], *args: list[Any], **kwargs: dict[str, Any]) -> str:  # type: ignore
-        instance = _CloudFormationRef(**kwargs)
+    def __new__(cls: type[Self], stack_name: str, export_name: str) -> str:  # type: ignore
+        instance = _CloudFormationRef(stack_name=stack_name, export_name=export_name)
         return str(instance)
 
 
@@ -218,7 +219,17 @@ class Function(BaseModel):
             handler=f'{rel_path.split(os.sep)[-1].replace(".py", "")}.{route.handler.__name__}',
             module="/".join(rel_path.split(os.sep)[:-1]),
             events=[{"httpApi": http_api_event}],
-            layers=["xd"],
+            layers=list(
+                set(
+                    [
+                        CloudFormationRef(
+                            stack_name="spy-layer",
+                            export_name="ServerlesspyLayerExport",
+                        )
+                    ]
+                    + route.layers  # type: ignore
+                )
+            ),
         )
 
 

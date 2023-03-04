@@ -7,17 +7,18 @@ name = "aws-spy"
 authors = [{name = "Dominik Pioś", email = "792954018@wp.pl"}]
 readme = "README.md"
 license = {file = "LICENSE"}
+requires-python = ">=3.7"
 classifiers = ["License :: OSI Approved :: Apache Software License"]
 dynamic = ["version", "description"]
 dependencies = [
-    "pydantic==1.10.5",
-    "openapi-schema-pydantic==1.2.4",
-    "pyyaml==6.0",
-    "pydantic_yaml==0.10.0"
+    "pydantic>=1.0.0",
+    "openapi-schema-pydantic>=1.2.0",
+    "pyyaml>=6.0",
+    "pydantic_yaml>=0.10.0"
 ]
 
 [project.scripts]
-serverlesspy = "serverlesspy.helpers.cli:cli_handler"
+aws-spy = "aws_spy.helpers.cli:cli_handler"
 
 [project.urls]
 Home = "https://github.com/PiochU19/ServerlessPy"

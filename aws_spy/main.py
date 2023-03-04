@@ -163,6 +163,58 @@ class _SPY:
             use_vpc=use_vpc,
         )
 
+    def put(
+        self: Self,
+        path: str,
+        name: str,
+        *,
+        authorizer: Union[str, None] = None,
+        response_class: Union[type[BaseModel], None] = None,
+        status_code: Union[int, None] = None,
+        tags: Union[list[str], None] = None,
+        summary: Union[str, None] = None,
+        description: Union[str, None] = None,
+        use_vpc: bool = True,
+    ) -> Decorator:
+        return self.route(
+            method=Methods.PUT,
+            path=path,
+            name=name,
+            authorizer=authorizer,
+            response_class=response_class,
+            status_code=status_code,
+            tags=tags,
+            summary=summary,
+            description=description,
+            use_vpc=use_vpc,
+        )
+
+    def patch(
+        self: Self,
+        path: str,
+        name: str,
+        *,
+        authorizer: Union[str, None] = None,
+        response_class: Union[type[BaseModel], None] = None,
+        status_code: Union[int, None] = None,
+        tags: Union[list[str], None] = None,
+        summary: Union[str, None] = None,
+        description: Union[str, None] = None,
+        use_vpc: bool = True,
+    ) -> Decorator:
+        return self.route(
+            method=Methods.PATCH,
+            path=path,
+            name=name,
+            authorizer=authorizer,
+            response_class=response_class,
+            status_code=status_code,
+            tags=tags,
+            summary=summary,
+            description=description,
+            use_vpc=use_vpc,
+        )
+
 
 class SpyAPI(_SPY):
     def __init__(
