@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import Any, Union
 
 from openapi_schema_pydantic.v3.v3_0_3 import OpenAPI
@@ -15,6 +16,9 @@ from aws_spy.core.utils import is_type_required
 SCHEMA_PARAM = {
     int: "integer",
     str: "string",
+    bool: "boolean",
+    float: "number",
+    Enum: "string",
 }
 
 
@@ -39,7 +43,8 @@ def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
             required=is_type_required(route_param.annotation),
             param_in=route_param.in_.in_,
             param_schema=Schema(
-                type=SCHEMA_PARAM.get(route_param.annotation, "string")
+                type=SCHEMA_PARAM.get(route_param.annotation, "string"),
+                enum=route_param.enum,
             ),
         )
         for route_param in route.params

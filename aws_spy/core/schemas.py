@@ -159,8 +159,8 @@ class _JSONFileRef(BaseModel):
 
 
 class JSONFileRef(_JSONFileRef):
-    def __new__(cls: type[Self], *args: list[Any], **kwargs: dict[str, Any]) -> str:  # type: ignore
-        instance = _JSONFileRef(**kwargs)
+    def __new__(cls: type[Self], file_path: str, field: str) -> str:  # type: ignore
+        instance = _JSONFileRef(file_path=file_path, field=field)
         return str(instance)
 
 

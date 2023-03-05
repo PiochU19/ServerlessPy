@@ -1,5 +1,6 @@
 import inspect
 import re
+from enum import Enum
 from typing import Any, Callable, Set, TypeVar, Union
 
 from pydantic import BaseModel
@@ -16,6 +17,7 @@ class ParamSchema(BaseModel):
     arg_name: str
     in_: Param
     annotation: type
+    enum: Union[list[str], None]
 
     class Config:
         arbitrary_types_allowed = True
@@ -67,11 +69,16 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
                     f'{handler.__name__} expects two same {param.in_} params: "{param_name}"!'
                 )
 
+            enum = None
+            if issubclass(arg_value.annotation, Enum):
+                enum = [e.value for e in arg_value.annotation]
+
             params[param.in_][param_name] = ParamSchema(
                 name=param_name,
                 in_=arg_value.default,
                 arg_name=arg_name,
                 annotation=arg_value.annotation,
+                enum=enum,
             )
 
     return HandlerArgs(
