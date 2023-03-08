@@ -6,6 +6,7 @@ from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.exceptions import RouteDefinitionException
 from aws_spy.core.schemas import LH, LRT, Decorator, Methods, ServerlessConfig, SpyRoute
+from aws_spy.responses import BaseResponseSPY, JSONResponse, RAWResponse
 
 
 class _SPY:
@@ -59,27 +60,29 @@ class _SPY:
         use_vpc: bool,
     ) -> Decorator:
         def decorator(func: LH) -> LH:
-            self.add_route(
-                path,
-                method,
-                SpyRoute(
-                    method=method,
-                    path=path,
-                    name=name,
-                    handler=func,
-                    response_class=response_class,
-                    status_code=status_code,
-                    tags=tags,
-                    summary=summary,
-                    description=description,
-                    authorizer=authorizer,
-                    use_vpc=use_vpc,
-                ),
+            route = SpyRoute(
+                method=method,
+                path=path,
+                name=name,
+                handler=func,
+                response_class=response_class,
+                status_code=status_code,
+                tags=tags,
+                summary=summary,
+                description=description,
+                authorizer=authorizer,
+                use_vpc=use_vpc,
             )
+            self.add_route(path, method, route)
 
             @wraps(func)
             def wrapper(*args, **kwargs) -> LRT:
-                return func(*args, **kwargs)
+                return_obj = func(*args, **kwargs)
+                if not isinstance(return_obj, BaseResponseSPY):
+                    return_obj = JSONResponse(return_obj)
+                return_obj.route = route
+
+                return return_obj.response
 
             return wrapper
 

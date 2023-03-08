@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, get_args
 
 from aws_spy import SpyAPI
+from aws_spy.core import logger
 from aws_spy.core.exceptions import RouteDefinitionException
 from aws_spy.core.schemas import Function, Functions
 from aws_spy.core.utils import is_type_required
@@ -36,7 +37,7 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
                     function_kwargs["app"] = load_app_from_string(args.app)
                     continue
                 except LoadAppFromStringError as e:
-                    print(e)
+                    logger.error(e)
                     return
 
             is_required = is_type_required(argument_type_hint)
