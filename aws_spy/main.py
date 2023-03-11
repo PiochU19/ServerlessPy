@@ -1,12 +1,15 @@
+import inspect
 from functools import wraps
 from typing import Any, Union
 
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
+from aws_spy.core.event_utils import get_path_params
 from aws_spy.core.exceptions import RouteDefinitionException
-from aws_spy.core.schemas import LH, LRT, Decorator, Methods, ServerlessConfig, SpyRoute
-from aws_spy.responses import BaseResponseSPY, JSONResponse, RAWResponse
+from aws_spy.core.schemas import LH, Decorator, Methods, ServerlessConfig, SpyRoute
+from aws_spy.core.schemas_utils import resolve_handler_args
+from aws_spy.responses import BaseResponseSPY, ErrorResponse, JSONResponse
 
 
 class _SPY:
@@ -59,12 +62,12 @@ class _SPY:
         description: Union[str, None],
         use_vpc: bool,
     ) -> Decorator:
-        def decorator(func: LH) -> LH:
+        def decorator(handler: LH) -> LH:
             route = SpyRoute(
                 method=method,
                 path=path,
                 name=name,
-                handler=func,
+                handler=handler,
                 response_class=response_class,
                 status_code=status_code,
                 tags=tags,
@@ -75,9 +78,25 @@ class _SPY:
             )
             self.add_route(path, method, route)
 
-            @wraps(func)
-            def wrapper(*args, **kwargs) -> LRT:
-                return_obj = func(*args, **kwargs)
+            @wraps(handler)
+            def wrapper(*args) -> dict[str, Any]:
+                event = args[0]
+                context = args[1]
+                kwargs, errors = {}, []
+                inspected_args = inspect.signature(handler).parameters
+                handler_args = resolve_handler_args(handler)
+                for params, errors_ in [get_path_params(event, handler_args.path)]:
+                    kwargs.update(params)
+                    errors += errors_
+
+                if errors:
+                    return ErrorResponse(errors, status_code=422).response
+                if "event" in inspected_args:
+                    kwargs["event"] = event
+                if "context" in inspected_args:
+                    kwargs["context"] = context
+
+                return_obj = handler(**kwargs)
                 if not isinstance(return_obj, BaseResponseSPY):
                     return_obj = JSONResponse(return_obj)
                 return_obj.route = route

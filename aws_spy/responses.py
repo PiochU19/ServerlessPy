@@ -18,6 +18,9 @@ class ContentType(str, Enum):
 
 
 class BaseResponseSPY(ABC):
+    route: Union[SpyRoute, None]
+
+    @property
     @abstractmethod
     def response(self: Self) -> dict[str, Any]:
         raise NotImplementedError
@@ -68,3 +71,31 @@ class RAWResponse(BaseResponseSPY):
     @property
     def response(self: Self) -> dict[str, Any]:
         return self.response_
+
+
+class ErrorResponse(BaseResponseSPY):
+    def __init__(
+        self: Self,
+        errors: list[str],
+        status_code: int = 400,
+        additional_headers: Union[dict[str, str], None] = None,
+    ) -> None:
+        self.errors = errors
+        self.status_code = status_code
+        self.additional_headers = additional_headers
+
+    @property
+    def response(self: Self) -> dict[str, Any]:
+        headers = {
+            "Content-Type": ContentType.JSON.value,
+        }
+        if self.additional_headers is not None:
+            headers.update(self.additional_headers)
+
+        data = [{"message": error} for error in self.errors]
+
+        return {
+            "statusCode": self.status_code,
+            "body": json.dumps(data, cls=JSONEncoder, ensure_ascii=False),
+            "headers": headers,
+        }

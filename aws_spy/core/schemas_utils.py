@@ -6,6 +6,7 @@ from typing import Any, Callable, Set, TypeVar, Union
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
+from aws_spy.core import types
 from aws_spy.core.exceptions import RouteDefinitionException
 from aws_spy.core.params import Param, ParamType
 
@@ -17,6 +18,7 @@ class ParamSchema(BaseModel):
     arg_name: str
     in_: Param
     annotation: type
+    is_required: bool
     enum: Union[list[str], None]
 
     class Config:
@@ -56,7 +58,6 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
         ParamType.QUERY: {},
     }
     request_body = None
-
     for arg_name, arg_value in inspect.signature(handler).parameters.items():
         if _is_request_body(arg_value) and request_body is None:
             request_body = arg_value.annotation
@@ -70,15 +71,22 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
                 )
 
             enum = None
-            if issubclass(arg_value.annotation, Enum):
-                enum = [e.value for e in arg_value.annotation]
+            is_required = types.is_type_required(arg_value.annotation)
+            annotation = (
+                arg_value.annotation
+                if is_required
+                else types.get_type_from_optional(arg_value.annotation)
+            )
+            if issubclass(annotation, Enum):
+                enum = [e.value for e in annotation]
 
             params[param.in_][param_name] = ParamSchema(
                 name=param_name,
                 in_=arg_value.default,
                 arg_name=arg_name,
-                annotation=arg_value.annotation,
+                annotation=annotation,
                 enum=enum,
+                is_required=is_required,
             )
 
     return HandlerArgs(

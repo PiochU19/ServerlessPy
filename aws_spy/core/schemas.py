@@ -13,6 +13,7 @@ from aws_spy.core.schemas_utils import (
     get_path_param_names,
     resolve_handler_args,
 )
+from aws_spy.responses import BaseResponseSPY
 
 # pydantic_yaml won't be in the layer
 try:
@@ -23,8 +24,7 @@ except ImportError:
         ...
 
 
-LRT = TypeVar("LRT")  # Lambda Return Type
-LH = Callable[..., LRT]  # Lambda Handler
+LH = Callable[..., Union[dict[str, Any], BaseResponseSPY]]  # Lambda Handler
 Decorator = Callable[[LH], LH]
 
 
