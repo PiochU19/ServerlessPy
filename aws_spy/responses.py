@@ -1,5 +1,4 @@
 import json
-from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Union
 
@@ -7,6 +6,7 @@ from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.encoders import JSONEncoder
+from aws_spy.core.responses import BaseResponseSPY
 from aws_spy.core.schemas import SpyRoute
 
 
@@ -15,15 +15,6 @@ class ContentType(str, Enum):
     XML = "application/xml"
     PLAIN = "text/plain"
     HTML = "text/html"
-
-
-class BaseResponseSPY(ABC):
-    route: Union[SpyRoute, None]
-
-    @property
-    @abstractmethod
-    def response(self: Self) -> dict[str, Any]:
-        raise NotImplementedError
 
 
 class JSONResponse(BaseResponseSPY):

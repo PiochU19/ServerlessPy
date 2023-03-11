@@ -7,9 +7,10 @@ from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.event_utils import get_path_params
 from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.responses import BaseResponseSPY
 from aws_spy.core.schemas import LH, Decorator, Methods, ServerlessConfig, SpyRoute
 from aws_spy.core.schemas_utils import resolve_handler_args
-from aws_spy.responses import BaseResponseSPY, ErrorResponse, JSONResponse
+from aws_spy.responses import ErrorResponse, JSONResponse
 
 
 class _SPY:
