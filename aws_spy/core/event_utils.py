@@ -1,38 +1,59 @@
-from typing import Any, TypedDict, Union
+import json
+from typing import Any, Literal, TypeVar, Union
+
+from pydantic import BaseModel, ValidationError
 
 from aws_spy.core.schemas_utils import ParamSchema
 
-
-class Event(TypedDict):
-    path: str
-    httpMethod: str
-    headers: dict[str, str]
-    queryStringParameters: Union[dict[str, str], None]
-    multiValueQueryStringParameters: Union[dict[str, str], None]
-    pathParameters: Union[dict[str, str], None]
-    body: Union[str, None]
-    isBase64Encoded: bool
+RequestBodyType = TypeVar("RequestBodyType", bound=BaseModel)
 
 
-# TODO: export functionality for all kind of paths
-def get_path_params(
-    event: Event, expected_path_params: dict[str, ParamSchema]
+def export_params_from_event(
+    in_event_params: Union[dict[str, Any], None],
+    expected_params: list[ParamSchema],
+    type_: Literal["path", "header", "query"],
 ) -> tuple[dict[str, Any], list[str]]:
+    if in_event_params is None:
+        in_event_params = {}
     args, errors = {}, []
-    path_params = event.get("pathParameters")
-    if path_params is None:
-        path_params = {}
-
-    for _, expected_path_param in expected_path_params.items():
-        param = path_params.get(expected_path_param.name)
-        if param is None and expected_path_param.is_required:
-            errors.append(f"ERROR")
+    for expected_param in expected_params:
+        param = in_event_params.get(expected_param.name)
+        if param is None and expected_param.is_required:
+            errors.append(
+                f"Required argument {expected_param.name} not found in {type_}!"
+            )
             continue
         try:
-            param = expected_path_param.annotation(param)
+            param = expected_param.annotation(param) if param is not None else None
         except ValueError:
-            errors.append(f"TYPE ERROR")
+            errors.append(
+                f"{expected_param.name} should be {expected_param.annotation} type!"
+            )
             continue
-        args[expected_path_param.arg_name] = param
+        args[expected_param.arg_name] = param
 
     return args, errors
+
+
+def export_request_body(
+    body: str, request_body_type: type[RequestBodyType]
+) -> tuple[Union[RequestBodyType, dict[str, Any], None], list[str]]:
+    try:
+        body = json.loads(body)
+    except json.JSONDecodeError:
+        return None, ["Request body is empty!"]
+    try:
+        request_body = request_body_type.parse_obj(body)
+    except ValidationError as e:
+        errors = []
+        for error in e.errors():
+            if error["type"].startswith("type_error"):
+                errors.append(
+                    f'Wrong type received at: {error["loc"][0]}. Expected: {error["type"].split(".")[-1]}'
+                )
+                continue
+            if error["type"].endswith("missing"):
+                errors.append(f'Value not found at: {error["loc"][0]}')
+        return None, errors
+
+    return request_body, []

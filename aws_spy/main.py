@@ -5,11 +5,10 @@ from typing import Any, Union
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
-from aws_spy.core.event_utils import get_path_params
+from aws_spy.core.event_utils import export_params_from_event, export_request_body
 from aws_spy.core.exceptions import RouteDefinitionException
 from aws_spy.core.responses import BaseResponseSPY
 from aws_spy.core.schemas import LH, Decorator, Methods, ServerlessConfig, SpyRoute
-from aws_spy.core.schemas_utils import resolve_handler_args
 from aws_spy.responses import ErrorResponse, JSONResponse
 
 
@@ -84,17 +83,32 @@ class _SPY:
                 event = args[0]
                 context = args[1]
                 kwargs, errors = {}, []
-                inspected_args = inspect.signature(handler).parameters
-                handler_args = resolve_handler_args(handler)
-                for params, errors_ in [get_path_params(event, handler_args.path)]:
+                for params, errors_ in [
+                    export_params_from_event(
+                        event.get("pathParameters"), route.path_params, "path"
+                    ),
+                    export_params_from_event(
+                        event.get("headers"), route.header_params, "header"
+                    ),
+                    export_params_from_event(
+                        event.get("queryStringParameters"), route.query_params, "query"
+                    ),
+                ]:
                     kwargs.update(params)
                     errors += errors_
 
+                if route.request_body and route.request_body_arg_name:
+                    request_body, request_body_errors = export_request_body(
+                        event.get("body", ""), route.request_body
+                    )
+                    errors += request_body_errors
+                    kwargs[route.request_body_arg_name] = request_body
+
                 if errors:
                     return ErrorResponse(errors, status_code=422).response
-                if "event" in inspected_args:
+                if route.add_event:
                     kwargs["event"] = event
-                if "context" in inspected_args:
+                if route.add_context:
                     kwargs["context"] = context
 
                 return_obj = handler(**kwargs)

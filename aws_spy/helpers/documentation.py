@@ -47,7 +47,7 @@ def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
                 enum=route_param.enum,
             ),
         )
-        for route_param in route.params
+        for route_param in route.header_params + route.path_params + route.query_params
     ]
     if route.tags:
         item["tags"] = route.tags  # type: ignore

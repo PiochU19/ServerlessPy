@@ -60,12 +60,17 @@ class SpyRoute(BaseModel):
     tags: Union[list[str], None]
     summary: str
     description: Union[str, None]
+    request_body_arg_name: Union[str, None]
     request_body: Union[type[BaseModel], None]
     response_class: Union[type[BaseModel], None]
-    params: list[ParamSchema] = Field(default_factory=list)
+    header_params: list[ParamSchema] = Field(default_factory=list)
+    path_params: list[ParamSchema] = Field(default_factory=list)
+    query_params: list[ParamSchema] = Field(default_factory=list)
     use_vpc: bool = Field(True)
     authorizer: Union[str, None] = Field(None)
     layers: list[str] = Field(default_factory=list)
+    add_event: bool = Field(default=False)
+    add_context: bool = Field(default=False)
 
     @root_validator(pre=True)
     def set_status_code(
@@ -97,8 +102,10 @@ class SpyRoute(BaseModel):
         args_count = len(args)
         # exclude lambdas event and context from count
         if "event" in args:
+            values["add_event"] = True
             args_count -= 1
         if "context" in args:
+            values["add_context"] = True
             args_count -= 1
         if handler_args.count != args_count:
             raise RouteDefinitionException(
@@ -127,9 +134,10 @@ class SpyRoute(BaseModel):
 
         if handler_args.request_body:
             values["request_body"] = handler_args.request_body
+            values["request_body_arg_name"] = handler_args.request_body_arg_name
 
         for attr_name in ("path", "query", "header"):
-            values["params"] += [
+            values[f"{attr_name}_params"] += [
                 param for _, param in getattr(handler_args, attr_name).items()
             ]
 

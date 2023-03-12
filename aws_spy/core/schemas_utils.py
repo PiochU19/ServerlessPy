@@ -30,6 +30,7 @@ class HandlerArgs(BaseModel):
     path: dict[str, ParamSchema]
     header: dict[str, ParamSchema]
     request_body: Union[type[BaseModel], None]
+    request_body_arg_name: Union[str, None]
 
     @property
     def count(self: Self) -> int:
@@ -58,9 +59,11 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
         ParamType.QUERY: {},
     }
     request_body = None
+    request_body_arg_name = None
     for arg_name, arg_value in inspect.signature(handler).parameters.items():
         if _is_request_body(arg_value) and request_body is None:
             request_body = arg_value.annotation
+            request_body_arg_name = arg_name
             continue
         if _is_param(arg_value):
             param: Param = arg_value.default
@@ -94,6 +97,7 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
         path=params[ParamType.PATH],
         header=params[ParamType.HEADER],
         request_body=request_body,
+        request_body_arg_name=request_body_arg_name,
     )
 
 
