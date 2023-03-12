@@ -95,14 +95,11 @@ def deploy_layer(stage: str, region: str) -> None:
         os.path.join(serverlesspy_path, "core"),
         os.path.join(serverless_layer_path, "core"),
     )
-    copy_file(
-        os.path.join(serverlesspy_path, "__init__.py"),
-        os.path.join(serverless_layer_path, "__init__.py"),
-    )
-    copy_file(
-        os.path.join(serverlesspy_path, "main.py"),
-        os.path.join(serverless_layer_path, "main.py"),
-    )
+    for file_to_copy in ("__init__.py", "main.py", "responses.py"):
+        copy_file(
+            os.path.join(serverlesspy_path, file_to_copy),
+            os.path.join(serverless_layer_path, file_to_copy),
+        )
     current_working_dir = os.getcwd()
     os.chdir(os.path.join(serverlesspy_path, "layer"))
     os.system(f"serverless deploy -s {stage} -c spy-layer.yml --region {region}")
