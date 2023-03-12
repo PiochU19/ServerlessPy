@@ -83,10 +83,12 @@ class ErrorResponse(BaseResponseSPY):
         if self.additional_headers is not None:
             headers.update(self.additional_headers)
 
-        data = [{"message": error} for error in self.errors]
-
         return {
             "statusCode": self.status_code,
-            "body": json.dumps(data, cls=JSONEncoder, ensure_ascii=False),
+            "body": json.dumps(
+                {"errors": [{"message": error} for error in self.errors]},
+                cls=JSONEncoder,
+                ensure_ascii=False,
+            ),
             "headers": headers,
         }

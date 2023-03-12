@@ -20,14 +20,14 @@ def export_params_from_event(
         param = in_event_params.get(expected_param.name)
         if param is None and expected_param.is_required:
             errors.append(
-                f"Required argument {expected_param.name} not found in {type_}!"
+                f"Required parameter {expected_param.name} not found in {type_}."
             )
             continue
         try:
             param = expected_param.annotation(param) if param is not None else None
         except ValueError:
             errors.append(
-                f"{expected_param.name} should be {expected_param.annotation} type!"
+                f"{expected_param.name} should be {expected_param.annotation} type."
             )
             continue
         args[expected_param.arg_name] = param

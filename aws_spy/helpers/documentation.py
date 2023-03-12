@@ -11,7 +11,7 @@ from openapi_schema_pydantic.v3.v3_0_3.util import (
 )
 
 from aws_spy.core.schemas import Methods, SpyRoute
-from aws_spy.core.utils import is_type_required
+from aws_spy.core.types import is_type_required
 
 SCHEMA_PARAM = {
     int: "integer",
@@ -34,7 +34,15 @@ def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
                         else {}
                     }
                 },
-            }
+            },
+            422: {
+                "description": "Validation Error",
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/SPY422ErrorResponse"}
+                    }
+                },
+            },
         }
     }
     item["parameters"] = [  # type: ignore
@@ -88,6 +96,40 @@ def construct_base_open_api(
                     for method, route in route_dict.items()
                 }
                 for path, route_dict in routes.items()
+            },
+            "components": {
+                "schemas": {
+                    "SPY422SingleError": {
+                        "title": "SPY 422 Single Error Schema",
+                        "required": ["message"],
+                        "type": "object",
+                        "properties": {
+                            "message": {
+                                "title": "Error message",
+                                "type": "string",
+                            }
+                        },
+                    },
+                    "SPY422ErrorResponse": {
+                        "title": "SPY 422 Error Response",
+                        "required": ["error"],
+                        "type": "object",
+                        "properties": {
+                            "errors": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SPY422SingleError"
+                                },
+                                "example": [
+                                    "Wrong type received at: age. Expected: integer",
+                                    "Value not found at: name",
+                                    "Required parameter authorization not found in header.",
+                                    "user_id should be UUID type.",
+                                ],
+                            }
+                        },
+                    },
+                }
             },
         }
     )

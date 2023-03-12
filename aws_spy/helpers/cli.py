@@ -12,7 +12,7 @@ from aws_spy import SpyAPI
 from aws_spy.core import logger
 from aws_spy.core.exceptions import RouteDefinitionException
 from aws_spy.core.schemas import Function, Functions
-from aws_spy.core.utils import is_type_required
+from aws_spy.core.types import is_type_required
 from aws_spy.helpers.documentation import get_openapi
 from aws_spy.helpers.exceptions import (
     PythonEnvironmentException,
