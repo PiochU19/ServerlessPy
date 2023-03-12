@@ -24,7 +24,8 @@ except ImportError:
         ...
 
 
-LH = Callable[..., Union[dict[str, Any], BaseResponseSPY]]  # Lambda Handler
+LHReturnType = TypeVar("LHReturnType")
+LH = Callable[..., LHReturnType]  # Lambda Handler
 Decorator = Callable[[LH], LH]
 
 
@@ -123,9 +124,6 @@ class SpyRoute(BaseModel):
                 raise RouteDefinitionException(
                     f'Your {path_arg} path parameter is missing in {method.upper()} method on "{path} path!"'
                 )
-
-        if method == Methods.POST and handler_args.query:
-            raise RouteDefinitionException("POST method doesn't support query params!")
 
         if method in (Methods.GET, Methods.DELETE) and handler_args.request_body:
             raise RouteDefinitionException(
