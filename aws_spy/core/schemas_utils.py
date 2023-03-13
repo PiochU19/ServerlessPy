@@ -70,7 +70,8 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
             param_name = param.name if param.name is not None else arg_name
             if param_name in params[param.in_].keys():
                 raise RouteDefinitionException(
-                    f'{handler.__name__} expects two same {param.in_} params: "{param_name}"!'
+                    f"{handler.__name__} expects two same "
+                    f'{param.in_} params: "{param_name}"!'
                 )
 
             enum = None

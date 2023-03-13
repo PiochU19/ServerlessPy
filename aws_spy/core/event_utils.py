@@ -49,7 +49,8 @@ def export_request_body(
         for error in e.errors():
             if error["type"].startswith("type_error"):
                 errors.append(
-                    f'Wrong type received at: {error["loc"][0]}. Expected: {error["type"].split(".")[-1]}'
+                    f'Wrong type received at: {error["loc"][0]}. '
+                    f'Expected: {error["type"].split(".")[-1]}'
                 )
                 continue
             if error["type"].endswith("missing"):

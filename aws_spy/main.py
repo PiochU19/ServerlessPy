@@ -1,4 +1,3 @@
-import inspect
 from functools import wraps
 from typing import Any, Union
 
@@ -39,7 +38,8 @@ class _SPY:
 
         if path in self.routes.keys() and method in self.routes[path]:
             raise RouteDefinitionException(
-                f'There is already existing "{method.upper()}" method definition under "{path}" path.'
+                f'There is already existing "{method.upper()}" '
+                'method definition under "{path}" path.'
             )
 
         if path not in self.routes.keys():

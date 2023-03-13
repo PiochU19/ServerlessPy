@@ -122,7 +122,8 @@ class SpyRoute(BaseModel):
         for path_arg in handler_args.path.keys():
             if path_arg not in path_params:
                 raise RouteDefinitionException(
-                    f'Your {path_arg} path parameter is missing in {method.upper()} method on "{path} path!"'
+                    f"Your {path_arg} path parameter is missing in "
+                    f'{method.upper()} method on "{path}" path!'
                 )
 
         if method in (Methods.GET, Methods.DELETE) and handler_args.request_body:
@@ -176,7 +177,7 @@ def build_cognito_issue_url(
     return f"https://cognito-idp.${{region}}.amazonaws.com/{user_pool_id}"
 
 
-class Authorizers(BaseModel):
+class Authorizer(BaseModel):
     type: Literal["jwt"] = "jwt"
     identitySource: str = "$request.header.Authorization"
     issuerUrl: str
@@ -190,7 +191,7 @@ class CORS(BaseModel):
 
 
 class HTTPApi(BaseModel):
-    authorizers: dict[str, Authorizers]
+    authorizers: dict[str, Authorizer]
     cors: CORS
 
 

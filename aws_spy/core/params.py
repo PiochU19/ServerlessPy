@@ -18,13 +18,13 @@ class Param(ABC):
         self.name = name
 
 
-class Query(Param):
+class QueryClass(Param):
     in_ = ParamType.QUERY
 
 
-class Path(Param):
+class PathClass(Param):
     in_ = ParamType.PATH
 
 
-class Header(Param):
+class HeaderClass(Param):
     in_ = ParamType.HEADER

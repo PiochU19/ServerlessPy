@@ -1,6 +1,6 @@
 """ServerlessPy package ;D"""
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 from aws_spy import responses
 from aws_spy.core.logging import logger
@@ -8,7 +8,7 @@ from aws_spy.core.params_alias import Header, Path, Query
 from aws_spy.core.schemas import (
     CORS,
     VPC,
-    Authorizers,
+    Authorizer,
     CloudFormationRef,
     HTTPApi,
     JSONFileRef,
@@ -29,7 +29,7 @@ __all__ = (
     "VPC",
     "HTTPApi",
     "CORS",
-    "Authorizers",
+    "Authorizer",
     "build_cognito_issue_url",
     "JSONFileRef",
     "CloudFormationRef",
