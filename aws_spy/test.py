@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.schemas import LH, Methods
-from aws_spy.main import SpyAPI
 
 
 class Response(BaseModel):
@@ -24,11 +23,9 @@ class Response(BaseModel):
 class TestClient:
     __test__ = False
 
-    def __init__(self: Self, app: SpyAPI) -> None:
-        self.app = app
-
+    @classmethod
     def post(
-        self: Self,
+        cls: type[Self],
         handler: LH,
         *,
         body: dict[str, Any] = None,
@@ -36,9 +33,9 @@ class TestClient:
         query_params: Union[dict[str, str], None] = None,
         path_params: Union[dict[str, str], None] = None,
     ) -> Response:
-        return self._call(
+        return cls._call(
             handler,
-            self._build_event(
+            cls._build_event(
                 method=Methods.POST,
                 body=body,
                 headers=headers,
@@ -47,8 +44,9 @@ class TestClient:
             ),
         )
 
+    @classmethod
     def delete(
-        self: Self,
+        cls: type[Self],
         handler: LH,
         *,
         body: dict[str, Any] = None,
@@ -56,9 +54,9 @@ class TestClient:
         query_params: Union[dict[str, str], None] = None,
         path_params: Union[dict[str, str], None] = None,
     ) -> Response:
-        return self._call(
+        return cls._call(
             handler,
-            self._build_event(
+            cls._build_event(
                 method=Methods.DELETE,
                 body=body,
                 headers=headers,
@@ -67,8 +65,9 @@ class TestClient:
             ),
         )
 
+    @classmethod
     def patch(
-        self: Self,
+        cls: type[Self],
         handler: LH,
         *,
         body: dict[str, Any] = None,
@@ -76,9 +75,9 @@ class TestClient:
         query_params: Union[dict[str, str], None] = None,
         path_params: Union[dict[str, str], None] = None,
     ) -> Response:
-        return self._call(
+        return cls._call(
             handler,
-            self._build_event(
+            cls._build_event(
                 method=Methods.PATCH,
                 body=body,
                 headers=headers,
@@ -87,8 +86,9 @@ class TestClient:
             ),
         )
 
+    @classmethod
     def put(
-        self: Self,
+        cls: type[Self],
         handler: LH,
         *,
         body: dict[str, Any] = None,
@@ -96,9 +96,9 @@ class TestClient:
         query_params: Union[dict[str, str], None] = None,
         path_params: Union[dict[str, str], None] = None,
     ) -> Response:
-        return self._call(
+        return cls._call(
             handler,
-            self._build_event(
+            cls._build_event(
                 method=Methods.PUT,
                 body=body,
                 headers=headers,
@@ -107,17 +107,18 @@ class TestClient:
             ),
         )
 
+    @classmethod
     def get(
-        self: Self,
+        cls: type[Self],
         handler: LH,
         *,
         headers: Union[dict[str, str], None] = None,
         query_params: Union[dict[str, str], None] = None,
         path_params: Union[dict[str, str], None] = None,
     ) -> Response:
-        return self._call(
+        return cls._call(
             handler,
-            self._build_event(
+            cls._build_event(
                 method=Methods.GET,
                 headers=headers,
                 query_params=query_params,

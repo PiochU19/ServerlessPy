@@ -18,7 +18,7 @@ from aws_spy.core.schemas_utils import (
 # pydantic_yaml won't be in the layer
 try:
     from pydantic_yaml import YamlModel
-except ImportError:
+except ImportError:  # pragma: no cover
 
     class YamlModel(BaseModel):  # type: ignore
         ...

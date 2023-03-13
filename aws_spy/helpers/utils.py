@@ -14,7 +14,7 @@ def load_app_from_string(import_string: str) -> SpyAPI:
 
     module_string, _, app_name = import_string.partition(":")
     if not module_string or not app_name:
-        raise LoadAppFromStringError(f'Path must be in format "<module>:<app_name>"')
+        raise LoadAppFromStringError('Path must be in format "<module>:<app_name>"')
 
     try:
         module = importlib.import_module(module_string)

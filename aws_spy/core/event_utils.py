@@ -27,7 +27,8 @@ def export_params_from_event(
             param = expected_param.annotation(param) if param is not None else None
         except ValueError:
             errors.append(
-                f"{expected_param.name} should be {expected_param.annotation} type."
+                f"{expected_param.name} should be "
+                f"{expected_param.annotation.__name__} type."
             )
             continue
         args[expected_param.arg_name] = param
@@ -36,14 +37,14 @@ def export_params_from_event(
 
 
 def export_request_body(
-    body: str, request_body_type: type[RequestBodyType]
+    body: str, request_body_class: type[RequestBodyType]
 ) -> tuple[Union[RequestBodyType, dict[str, Any], None], list[str]]:
     try:
         body = json.loads(body)
     except json.JSONDecodeError:
         return None, ["Request body is empty!"]
     try:
-        request_body = request_body_type.parse_obj(body)
+        request_body = request_body_class.parse_obj(body)
     except ValidationError as e:
         errors = []
         for error in e.errors():
@@ -55,6 +56,8 @@ def export_request_body(
                 continue
             if error["type"].endswith("missing"):
                 errors.append(f'Value not found at: {error["loc"][0]}')
+                continue
+            errors.append(f"Unknown error: {error}")  # pragma: no cover
         return None, errors
 
     return request_body, []

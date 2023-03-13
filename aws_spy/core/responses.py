@@ -11,4 +11,4 @@ class BaseResponseSPY(ABC):
     @property
     @abstractmethod
     def response(self: Self) -> dict[str, Any]:
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover

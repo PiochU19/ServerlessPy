@@ -13,4 +13,4 @@ class JSONEncoder(json.JSONEncoder):
             return str(o)
         elif isinstance(o, Decimal):
             return float(o)
-        return super().default(o)
+        return super().default(o)  # pragma: no cover
