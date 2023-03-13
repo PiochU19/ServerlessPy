@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, root_validator, validator
 from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.exceptions import RouteDefinitionException
-from aws_spy.core.responses import BaseResponseSPY
 from aws_spy.core.schemas_utils import (
     ParamSchema,
     get_path_param_names,
@@ -59,7 +58,7 @@ class SpyRoute(BaseModel):
     handler: LH
     status_code: int
     tags: Union[list[str], None]
-    summary: str
+    summary: str = Field("API endpoint")
     description: Union[str, None]
     request_body_arg_name: Union[str, None]
     request_body: Union[type[BaseModel], None]
@@ -223,7 +222,10 @@ class Function(BaseModel):
             http_api_event["authorizer"] = {"name": route.authorizer}
 
         return cls(
-            handler=f'{rel_path.split(os.sep)[-1].replace(".py", "")}.{route.handler.__name__}',
+            handler=(
+                f'{rel_path.split(os.sep)[-1].replace(".py", "")}'
+                f".{route.handler.__name__}"
+            ),
             module="/".join(rel_path.split(os.sep)[:-1]),
             events=[{"httpApi": http_api_event}],
             layers=list(

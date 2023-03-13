@@ -17,7 +17,7 @@ METHODS = [method for method in Methods]
 
 
 @pytest.mark.parametrize("method", METHODS)
-def test_path_param_not_found(app: SpyAPI, method: str) -> None:
+def test_path_param_not_found(app: SpyAPI, method: Methods) -> None:
     app_method = getattr(app, method)
     path = "/path_without_user_id"
 
@@ -31,6 +31,23 @@ def test_path_param_not_found(app: SpyAPI, method: str) -> None:
 
         @app_method(path, "lambda")
         def handler(user_id: str = Path()) -> None:
+            ...
+
+
+@pytest.mark.parametrize("method", METHODS)
+def test_same_param_names(app: SpyAPI, method: Methods) -> None:
+    app_method = getattr(app, method)
+    path = "path"
+
+    with pytest.raises(
+        RouteDefinitionException,
+        match='handler expects two same header params: "user_id"!',
+    ):
+
+        @app_method(path, "lambda")
+        def handler(
+            user_id: str = Header(), something: str = Header("user_id")
+        ) -> None:
             ...
 
 
