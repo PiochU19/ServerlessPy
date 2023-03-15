@@ -108,7 +108,7 @@ class SpyRoute(BaseModel):
         if "context" in args:
             values["add_context"] = True
             args_count -= 1
-        if handler_args.count != args_count:
+        if handler_args.count != args_count and not values["skip_validation"]:
             raise RouteDefinitionException(
                 f'Unrecognized params for {method.upper()} method on "{path}" path!'
             )
