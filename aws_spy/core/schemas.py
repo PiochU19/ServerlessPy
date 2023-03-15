@@ -188,6 +188,7 @@ class CORS(BaseModel):
     allowedHeaders: list[str]
     exposedResponseHeaders: list[str]
     allowedMethods: list[str]
+    allowedOrigins: list[str]
 
 
 class HTTPApi(BaseModel):
