@@ -25,6 +25,7 @@ def cors() -> CORS:
         allowedHeaders=["Content-Type", "Authorization"],
         exposedResponseHeaders=["X-Total-Count"],
         allowedMethods=["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
+        allowedOrigins=["*"],
     )
 
 

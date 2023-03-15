@@ -82,6 +82,8 @@ class _SPY:
 
             @wraps(handler)
             def wrapper(*args) -> dict[str, Any]:
+                if route.skip_validation:
+                    return handler(*args)
                 event = args[0]
                 context = args[1]
                 kwargs, errors = {}, []
