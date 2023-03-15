@@ -71,6 +71,7 @@ class SpyRoute(BaseModel):
     layers: list[str] = Field(default_factory=list)
     add_event: bool = Field(default=False)
     add_context: bool = Field(default=False)
+    skip_validation: bool = Field(default=False)
 
     @root_validator(pre=True)
     def set_status_code(

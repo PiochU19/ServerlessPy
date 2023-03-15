@@ -54,13 +54,14 @@ class _SPY:
         method: Methods,
         path: str,
         name: str,
-        authorizer: Union[str, None],
-        response_class: Union[type[BaseModel], None],
-        status_code: Union[int, None],
-        tags: Union[list[str], None],
-        summary: Union[str, None],
-        description: Union[str, None],
-        use_vpc: bool,
+        authorizer: Union[str, None] = None,
+        response_class: Union[type[BaseModel], None] = None,
+        status_code: Union[int, None] = None,
+        tags: Union[list[str], None] = None,
+        summary: Union[str, None] = None,
+        description: Union[str, None] = None,
+        use_vpc: Union[bool, None] = None,
+        skip_validation: Union[bool, None] = None,
     ) -> Decorator:
         def decorator(handler: LH) -> LH:
             route = SpyRoute(
@@ -75,6 +76,7 @@ class _SPY:
                 description=description,
                 authorizer=authorizer,
                 use_vpc=use_vpc,
+                skip_validation=skip_validation,
             )
             self.add_route(path, method, route)
 
@@ -134,6 +136,7 @@ class _SPY:
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
         use_vpc: bool = True,
+        skip_validation: bool = False,
     ) -> Decorator:
         return self.route(
             method=Methods.GET,
@@ -146,6 +149,7 @@ class _SPY:
             summary=summary,
             description=description,
             use_vpc=use_vpc,
+            skip_validation=skip_validation,
         )
 
     def post(
@@ -160,6 +164,7 @@ class _SPY:
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
         use_vpc: bool = True,
+        skip_validation: bool = False,
     ) -> Decorator:
         return self.route(
             method=Methods.POST,
@@ -172,6 +177,7 @@ class _SPY:
             summary=summary,
             description=description,
             use_vpc=use_vpc,
+            skip_validation=skip_validation,
         )
 
     def delete(
@@ -186,6 +192,7 @@ class _SPY:
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
         use_vpc: bool = True,
+        skip_validation: bool = False,
     ) -> Decorator:
         return self.route(
             method=Methods.DELETE,
@@ -198,6 +205,7 @@ class _SPY:
             summary=summary,
             description=description,
             use_vpc=use_vpc,
+            skip_validation=skip_validation,
         )
 
     def put(
@@ -212,6 +220,7 @@ class _SPY:
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
         use_vpc: bool = True,
+        skip_validation: bool = False,
     ) -> Decorator:
         return self.route(
             method=Methods.PUT,
@@ -224,6 +233,7 @@ class _SPY:
             summary=summary,
             description=description,
             use_vpc=use_vpc,
+            skip_validation=skip_validation,
         )
 
     def patch(
@@ -238,6 +248,7 @@ class _SPY:
         summary: Union[str, None] = None,
         description: Union[str, None] = None,
         use_vpc: bool = True,
+        skip_validation: bool = False,
     ) -> Decorator:
         return self.route(
             method=Methods.PATCH,
@@ -250,6 +261,7 @@ class _SPY:
             summary=summary,
             description=description,
             use_vpc=use_vpc,
+            skip_validation=True,
         )
 
 
