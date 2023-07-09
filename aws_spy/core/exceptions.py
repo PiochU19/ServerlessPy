@@ -1,2 +1,2 @@
-class RouteDefinitionException(Exception):
+class RouteDefinitionError(Exception):
     ...

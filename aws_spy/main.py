@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from aws_spy.core.event_utils import export_params_from_event, export_request_body
-from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.responses import BaseResponseSPY
 from aws_spy.core.schemas import LH, Decorator, Methods, ServerlessConfig, SpyRoute
 from aws_spy.responses import ErrorResponse, JSONResponse
@@ -33,11 +33,11 @@ class _SPY:
         path = self.prefix + path
         if route.name in self.function_unique_ids:
             msg = f"There is already {route.name} lambda registered."
-            raise RouteDefinitionException(msg)
+            raise RouteDefinitionError(msg)
 
         if path in self.routes.keys() and method in self.routes[path]:
             msg = f'There is already existing "{method.upper()}" method definition under "{{path}}" path.'
-            raise RouteDefinitionException(msg)
+            raise RouteDefinitionError(msg)
 
         if path not in self.routes.keys():
             self.routes[path] = {}
@@ -252,7 +252,7 @@ class _SPY:
             summary=summary,
             description=description,
             use_vpc=use_vpc,
-            skip_validation=True,
+            skip_validation=skip_validation,
         )
 
 

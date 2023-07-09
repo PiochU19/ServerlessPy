@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 
 from aws_spy import Header, Path, Query, SpyAPI
-from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.schemas import Methods, ParamSchema
 
 
@@ -13,7 +13,7 @@ class ExampleEnum(str, Enum):
     example = "example"
 
 
-METHODS = [method for method in Methods]
+METHODS = list(Methods)
 
 
 @pytest.mark.parametrize("method", METHODS)
@@ -22,11 +22,8 @@ def test_path_param_not_found(app: SpyAPI, method: Methods) -> None:
     path = "/path_without_user_id"
 
     with pytest.raises(
-        RouteDefinitionException,
-        match=(
-            "Your user_id path parameter is missing in "
-            f'{method.upper()} method on "{path}" path!'
-        ),
+        RouteDefinitionError,
+        match=(f'Your user_id path parameter is missing in {method.upper()} method on "{path}" path!'),
     ):
 
         @app_method(path, "lambda")
@@ -40,14 +37,12 @@ def test_same_param_names(app: SpyAPI, method: Methods) -> None:
     path = "path"
 
     with pytest.raises(
-        RouteDefinitionException,
+        RouteDefinitionError,
         match='handler expects two same header params: "user_id"!',
     ):
 
         @app_method(path, "lambda")
-        def handler(
-            user_id: str = Header(), something: str = Header("user_id")
-        ) -> None:
+        def handler(user_id: str = Header(), something: str = Header("user_id")) -> None:
             ...
 
 

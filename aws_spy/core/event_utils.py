@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal, TypeVar, Union
+from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ValidationError
 

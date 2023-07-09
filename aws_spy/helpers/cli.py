@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 from argparse import ArgumentParser
@@ -11,14 +10,12 @@ from typing import get_args
 
 from aws_spy import SpyAPI
 from aws_spy.core import logger
-from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.schemas import Function, Functions
 from aws_spy.core.types import is_type_required
-from aws_spy.helpers.documentation import get_openapi
-from aws_spy.helpers.exceptions import (
-    PythonEnvironmentException,
-    WrongArgumentException,
-)
+
+# from aws_spy.helpers.documentation import get_openapi
+from aws_spy.helpers.exceptions import PythonEnvironmentError, WrongArgumentError
 from aws_spy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
 
@@ -67,7 +64,7 @@ def deploy_layer(stage: str, region: str) -> None:
 
     if site_packages is None:
         msg = "Couldn't find site-packages folder."
-        raise PythonEnvironmentException(msg)
+        raise PythonEnvironmentError(msg)
     spy_package_name = "aws_spy"
 
     serverlesspy_path = Path(os.path.join(site_packages, spy_package_name))
@@ -79,7 +76,7 @@ def deploy_layer(stage: str, region: str) -> None:
         package_path = Path(os.path.join(site_packages, package))
         if not package_path.is_dir():
             msg = f'Could not find "{package}" package. Make sure it is installed in your current environment.'
-            raise PythonEnvironmentException(msg)
+            raise PythonEnvironmentError(msg)
         copy_tree(str(package_path), os.path.join(layer_path, package))
 
     copy_file(
@@ -98,29 +95,29 @@ def deploy_layer(stage: str, region: str) -> None:
         )
     current_working_dir = os.getcwd()
     os.chdir(os.path.join(serverlesspy_path, "layer"))
-    os.system(f"serverless deploy -s {stage} -c spy-layer.yml --region {region}")
+    os.system(f"serverless deploy -s {stage} -c spy-layer.yml --region {region}")  # noqa: S605
     os.chdir(current_working_dir)
 
 
-@unpack_args
-def generate_openapi(app: SpyAPI, path: str) -> None:
-    open_api = get_openapi(app.title, app.version, app.routes)
-    with open(f"./{path}", "w") as file:
-        json.dump(open_api, file)
+# @unpack_args
+# def generate_openapi(app: SpyAPI, path: str) -> None:
+#     open_api = get_openapi(app.title, app.version, app.routes)
+#     with open(f"./{path}", "w") as file:
+#         json.dump(open_api, file)
 
 
 @unpack_args
 def generate_serverless_file(app: SpyAPI, path: str) -> None:
     if not path.endswith(".yml"):
         msg = "File is not YAML file."
-        raise WrongArgumentException(msg)
+        raise WrongArgumentError(msg)
 
     functions: dict[str, Function] = {}
     for route_path, route_dict in app.routes.items():
         for method, route in route_dict.items():
             if route.authorizer is not None and route.authorizer not in app.config.provider.httpApi.authorizers.keys():
                 msg = f"Authorizer {route.authorizer} not defined"
-                raise RouteDefinitionException(msg)
+                raise RouteDefinitionError(msg)
 
             functions[route.name] = Function.from_route(route=route, method=method, path=route_path)
 
@@ -132,7 +129,7 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
 
 FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {
     "layer": deploy_layer,
-    "openapi": generate_openapi,
+    # "openapi": generate_openapi,
     "sls": generate_serverless_file,
 }
 

@@ -8,7 +8,7 @@ from typing import Any, Literal, TypeVar
 from pydantic import BaseModel, Field, root_validator, validator
 from typing_extensions import Self  # type: ignore
 
-from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.schemas_utils import (
     ParamSchema,
     get_path_param_names,
@@ -17,7 +17,7 @@ from aws_spy.core.schemas_utils import (
 
 # pydantic_yaml won't be in the layer
 try:
-    from pydantic_yaml import YamlModel
+    from pydantic_yaml import YamlModel  # type: ignore
 except ImportError:  # pragma: no cover
 
     class YamlModel(BaseModel):  # type: ignore
@@ -111,21 +111,21 @@ class SpyRoute(BaseModel):
             args_count -= 1
         if handler_args.count != args_count and not values["skip_validation"]:
             msg = f'Unrecognized params for {method.upper()} method on "{path}" path!'
-            raise RouteDefinitionException(msg)
+            raise RouteDefinitionError(msg)
 
         for path_param in path_params:
             if path_param not in handler_args.path.keys():
                 msg = f"You did not specify {path_param} in your handler arguments!"
-                raise RouteDefinitionException(msg)
+                raise RouteDefinitionError(msg)
 
         for path_arg in handler_args.path.keys():
             if path_arg not in path_params:
                 msg = f'Your {path_arg} path parameter is missing in {method.upper()} method on "{path}" path!'
-                raise RouteDefinitionException(msg)
+                raise RouteDefinitionError(msg)
 
         if method in (Methods.GET, Methods.DELETE) and handler_args.request_body:
             msg = f'{method.upper()} method on "{path}" cannot have request body!'
-            raise RouteDefinitionException(msg)
+            raise RouteDefinitionError(msg)
 
         if handler_args.request_body:
             values["request_body"] = handler_args.request_body

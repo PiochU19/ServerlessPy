@@ -2,13 +2,13 @@ import inspect
 import re
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, Set, TypeVar, Union
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore
 
 from aws_spy.core import types
-from aws_spy.core.exceptions import RouteDefinitionException
+from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.params import Param, ParamType
 
 LH = TypeVar("LH", bound=Callable[..., Any])
@@ -64,7 +64,7 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
             param_name = param.name if param.name is not None else arg_name
             if param_name in params[param.in_].keys():
                 msg = f'{handler.__name__} expects two same {param.in_} params: "{param_name}"!'
-                raise RouteDefinitionException(msg)
+                raise RouteDefinitionError(msg)
 
             enum = None
             is_required = types.is_type_required(arg_value.annotation)

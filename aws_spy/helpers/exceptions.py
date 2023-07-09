@@ -1,6 +1,6 @@
-class WrongArgumentException(Exception):
+class WrongArgumentError(Exception):
     ...
 
 
-class PythonEnvironmentException(Exception):
+class PythonEnvironmentError(Exception):
     ...

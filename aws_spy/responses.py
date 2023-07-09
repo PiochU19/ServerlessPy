@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel
 from typing_extensions import Self  # type: ignore

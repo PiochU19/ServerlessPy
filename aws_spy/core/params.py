@@ -1,6 +1,5 @@
 from abc import ABC
 from enum import Enum
-from typing import Union
 
 from typing_extensions import Self  # type: ignore
 
