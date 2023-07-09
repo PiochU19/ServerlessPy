@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import pytest
 from pydantic import BaseModel, Field
