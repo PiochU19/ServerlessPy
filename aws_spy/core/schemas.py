@@ -15,6 +15,8 @@ from aws_spy.core.schemas_utils import (
     resolve_handler_args,
 )
 
+# from aws_spy.dependencies import DependencySchema, get_dependencies
+
 # pydantic_yaml won't be in the layer
 try:
     from pydantic_yaml import YamlModel  # type: ignore
@@ -67,6 +69,7 @@ class SpyRoute(BaseModel):
     header_params: list[ParamSchema] = Field(default_factory=list)
     path_params: list[ParamSchema] = Field(default_factory=list)
     query_params: list[ParamSchema] = Field(default_factory=list)
+    # dependencies: list[DependencySchema] = Field(default_factory=list)
     use_vpc: bool = Field(True)
     authorizer: str | None = Field(None)
     layers: list[str] = Field(default_factory=list)
@@ -99,6 +102,7 @@ class SpyRoute(BaseModel):
 
         path_params = get_path_param_names(path)
         handler_args = resolve_handler_args(handler)
+        # values["dependencies"] = get_dependencies(handler)
 
         args = inspect.signature(handler).parameters
         args_count = len(args)

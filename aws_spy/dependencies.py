@@ -1,5 +1,6 @@
+# import inspect
 # from collections.abc import Callable
-# from typing import Any
+# from typing import TypedDict
 
 # from pydantic import BaseModel
 # from typing_extensions import Self
@@ -10,30 +11,28 @@
 #         self.func = func
 
 
-# class DependencySchema(BaseModel):
-#     func: Callable[..., Any]
-#     deps: list["DependencySchema"]
-
-#     @classmethod
-#     def from_func(
-#         cls: type[Self],
-#         func: Callable[..., Any],
-#         visited: Callable[..., Any] | None,
-#         ancestors: Callable[..., Any] | None,
-#     ) -> Self:
-#         if visited is None:
-#             visited = []
-#         if ancestors is None:
-#             ancestors = []
-
-#         deps: list[Self] = _resolve_deps(func, visited, ancestors)
-
-#         return cls(func=func, deps=deps)
+# def is_dependency(arg) -> bool:
+#     return isinstance(arg.param, Dependency)
 
 
-# def _resolve_deps(
-#     func: Callable[..., Any],
-#     visited: list[Callable[..., Any]],
-#     ancestors: list[Callable[..., Any]],
-# ) -> list[DependencySchema]:
-#     ...
+# class DependencySchema(TypedDict):
+#     arg_name: str
+#     func: Callable
+#     dependencies: dict[Callable, list["DependencySchema"]]
+
+
+# class FunctionDependencies(BaseModel):
+#     dependency_tree: dict[str, DependencySchema]
+
+
+# def get_dependencies(func: Callable) -> FunctionDependencies:
+#     dependencies = {}
+#     for arg in inspect.signature(func).parameters.values():
+#         if is_dependency(arg):
+#             dependencies[arg.name] = DependencySchema(
+#                 arg_name=arg.name,
+#                 func=arg.default.func,
+#                 dependencies=get_dependencies(arg.default.func).dependency_tree,
+#             )
+
+#     return FunctionDependencies(dependency_tree=dependencies)
