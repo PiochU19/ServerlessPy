@@ -42,10 +42,10 @@ class SameAsExampleResponseClass(BaseModel):
     ],
 )
 def test_json_response(
-    data: Union[BaseModel, dict[str, Any]],
+    data: BaseModel | dict[str, Any],
     response_class: type[BaseModel],
     expected_response_body: str,
-    additional_headers: Union[dict[str, str], None],
+    additional_headers: dict[str, str] | None,
 ) -> None:
     expected_headers = {
         "Content-Type": "application/json",

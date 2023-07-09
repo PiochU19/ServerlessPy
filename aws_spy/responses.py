@@ -36,7 +36,7 @@ class JSONResponse(BaseResponseSPY):
             headers.update(self.additional_headers)
 
         if self.route is not None and self.route.response_class is not None and isinstance(self.data, dict):
-            self.data = self.route.response_class.parse_obj(self.data)
+            self.data = self.route.response_class.model_validate(self.data)
 
         if (
             self.route is not None
@@ -44,10 +44,10 @@ class JSONResponse(BaseResponseSPY):
             and isinstance(self.data, BaseModel)
             and not isinstance(self.data, self.route.response_class)
         ):
-            self.data = self.route.response_class.parse_obj(self.data.dict())
+            self.data = self.route.response_class.model_validate(self.data.model_dump())
 
         if isinstance(self.data, BaseModel):
-            self.data = self.data.dict()
+            self.data = self.data.model_dump()
 
         if self.route is None or self.route.status_code is None:
             status_code = 200

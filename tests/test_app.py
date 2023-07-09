@@ -5,7 +5,7 @@ from aws_spy.core.schemas import Methods
 
 
 def test_app() -> None:
-    assert __version__ == "0.1.10"
+    assert __version__ == "0.1.11"
 
 
 def test_app_conf(app: SpyAPI, config: ServerlessConfig) -> None:

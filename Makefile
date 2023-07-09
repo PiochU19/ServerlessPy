@@ -15,7 +15,7 @@ lint: .pdm
 
 .PHONY: test
 test: .pdm
-	pdm run coverage run -m pytest $(source)
+	pdm run coverage run -m pytest $(source) $(args)
 
 .PHONY: testcov
 testcov: .pdm test

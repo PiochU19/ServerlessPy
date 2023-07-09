@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.exceptions import RouteDefinitionError
@@ -60,12 +60,12 @@ class SpyRoute(BaseModel):
     method: Methods
     handler: LH
     status_code: int
-    tags: list[str] | None
+    tags: list[str] | None = Field(None)
     summary: str = Field("API endpoint")
-    description: str | None
-    request_body_arg_name: str | None
-    request_body: type[BaseModel] | None
-    response_class: type[BaseModel] | None
+    description: str | None = Field(None)
+    request_body_arg_name: str | None = Field(None)
+    request_body: type[BaseModel] | None = Field(None)
+    response_class: type[BaseModel] | None = Field(None)
     header_params: list[ParamSchema] = Field(default_factory=list)
     path_params: list[ParamSchema] = Field(default_factory=list)
     query_params: list[ParamSchema] = Field(default_factory=list)
@@ -77,7 +77,7 @@ class SpyRoute(BaseModel):
     add_context: bool = Field(default=False)
     skip_validation: bool = Field(default=False)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def set_status_code(  # type: ignore
         cls: type[Self],  # noqa: N805
         values: dict[str, Any],
@@ -87,18 +87,18 @@ class SpyRoute(BaseModel):
 
         return values
 
-    @validator("summary", pre=True)
+    @field_validator("summary", mode="before")
     def set_summary(cls: type[Self], summary: str | None) -> str:  # type: ignore  # noqa: N805
         return summary or "API endpoint"
 
-    @root_validator
+    @model_validator(mode="after")
     def validate_handler_params(  # type: ignore
         cls: type[Self],  # noqa: N805
-        values: dict[str, Any],
+        model: Self,
     ) -> dict[str, Any]:
-        method: Methods = values["method"]
-        path: str = values["path"]
-        handler: LH = values["handler"]
+        method: Methods = model.method
+        path: str = model.path
+        handler: LH = model.handler
 
         path_params = get_path_param_names(path)
         handler_args = resolve_handler_args(handler)
@@ -108,12 +108,12 @@ class SpyRoute(BaseModel):
         args_count = len(args)
         # exclude lambdas event and context from count
         if "event" in args:
-            values["add_event"] = True
+            model.add_event = True
             args_count -= 1
         if "context" in args:
-            values["add_context"] = True
+            model.add_context = True
             args_count -= 1
-        if handler_args.count != args_count and not values["skip_validation"]:
+        if handler_args.count != args_count and not model.skip_validation:
             msg = f'Unrecognized params for {method.upper()} method on "{path}" path!'
             raise RouteDefinitionError(msg)
 
@@ -132,13 +132,18 @@ class SpyRoute(BaseModel):
             raise RouteDefinitionError(msg)
 
         if handler_args.request_body:
-            values["request_body"] = handler_args.request_body
-            values["request_body_arg_name"] = handler_args.request_body_arg_name
+            model.request_body = handler_args.request_body
+            model.request_body_arg_name = handler_args.request_body_arg_name
 
         for attr_name in ("path", "query", "header"):
-            values[f"{attr_name}_params"] += [param for _, param in getattr(handler_args, attr_name).items()]
+            setattr(
+                model,
+                f"{attr_name}_params",
+                getattr(model, f"{attr_name}_params")
+                + [param for _, param in getattr(handler_args, attr_name).items()],
+            )
 
-        return values
+        return model
 
 
 class _CloudFormationRef(BaseModel):
@@ -239,7 +244,7 @@ class Provider(BaseModel):
     region: str
     role: str | CloudFormationRef | JSONFileRef
     httpApi: HTTPApi  # noqa: N815
-    vpc: VPC | None
+    vpc: VPC | None = Field(None)
 
 
 class ServerlessConfig(YamlModel):
@@ -251,7 +256,7 @@ class ServerlessConfig(YamlModel):
     package: dict[str, bool] = Field({"individually": True})
     functions: dict[str, Function] | None = Field(None)
 
-    @validator("plugins", pre=True)
+    @field_validator("plugins", mode="before")
     def set_default_plugins(cls: type[Self], value: list[str] | None) -> list[str]:  # type: ignore  # noqa: N805
         value = value if value is not None else []
         value += [

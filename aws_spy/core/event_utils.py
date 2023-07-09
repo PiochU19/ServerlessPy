@@ -39,7 +39,7 @@ def export_request_body(
     except json.JSONDecodeError:
         return None, ["Request body is empty!"]
     try:
-        request_body = request_body_class.parse_obj(body)
+        request_body = request_body_class.model_validate(body)
     except ValidationError as e:
         errors = []
         for error in e.errors():

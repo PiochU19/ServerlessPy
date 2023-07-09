@@ -76,7 +76,7 @@ def test_params(
     param_annotation: type,
     expected_annotation: type,
     is_required: bool,
-    enum: Union[list[str], None],
+    enum: list[str] | None,
 ) -> None:
     app_method = getattr(app, method.value)
     expected_param = ParamSchema(

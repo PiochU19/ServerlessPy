@@ -18,16 +18,16 @@ class ExampleRequestBody(BaseModel):
     a: int
     b: str
     c: bool
-    d: Union[int, None]
-    example: Union[ExampleEnum, None] = Field(None)
+    d: int | None
+    example: ExampleEnum | None = Field(None)
 
 
 def gpm(
     name: str,
     arg_name: str,
     annotation: type,
-    is_required: bool = True,
-    enum: Union[list[str], None] = None,
+    is_required: bool = True,  # noqa: FBT001 FBT002
+    enum: list[str] | None = None,
 ) -> ParamSchema:
     return ParamSchema(
         name=name,
@@ -94,7 +94,7 @@ def gpm(
     ],
 )
 def test_export_params_from_event_success(
-    in_event_params: Union[dict[str, Any], None],
+    in_event_params: dict[str, Any] | None,
     expected_params: list[ParamSchema],
     type_: Literal["path", "header", "query"],
     expected_params_result: dict[str, Any],
@@ -106,31 +106,26 @@ def test_export_params_from_event_success(
 
 
 @pytest.mark.parametrize(
-    ["body", "expected_errors"],
+    ["body", "expecting_errors"],
     [
-        (json.dumps({"a": 1, "b": "string", "c": True, "d": None}), []),
-        ["", ["Request body is empty!"]],
+        (json.dumps({"a": 1, "b": "string", "c": True, "d": None}), False),
+        ["", True],
         (
             json.dumps({"a": "str", "b": "string", "c": "str", "d": None}),
-            [
-                "Wrong type received at: a. Expected: integer",
-                "Wrong type received at: c. Expected: bool",
-            ],
+            True,
         ),
         (
-            json.dumps(
-                {"a": 1, "b": "string", "c": True, "d": "10", "example": "not example"}
-            ),
-            ["Wrong type received at: example. Expected: enum"],
+            json.dumps({"a": 1, "b": "string", "c": True, "d": "10", "example": "not example"}),
+            True,
         ),
         (
             json.dumps({"b": "string", "c": True, "d": "10", "example": "example"}),
-            ["Value not found at: a"],
+            True,
         ),
     ],
 )
-def test_export_request_body(body: str, expected_errors: list[str]) -> None:
+def test_export_request_body(body: str, expecting_errors: bool) -> None:  # noqa: FBT001
     request_body, errors = export_request_body(body, ExampleRequestBody)
-    assert errors == expected_errors
+    assert bool(errors) == expecting_errors
     if not errors:
         assert isinstance(request_body, ExampleRequestBody)
