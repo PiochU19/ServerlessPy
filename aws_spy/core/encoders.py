@@ -7,7 +7,7 @@ from uuid import UUID
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
-        if isinstance(o, (datetime.datetime, datetime.date)):
+        if isinstance(o, datetime.datetime | datetime.date):
             return o.isoformat()
         elif isinstance(o, UUID):
             return str(o)

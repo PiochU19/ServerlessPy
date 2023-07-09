@@ -20,12 +20,12 @@ class ContentType(str, Enum):
 class JSONResponse(BaseResponseSPY):
     def __init__(
         self: Self,
-        data: Union[dict[str, Any], BaseModel],
-        additional_headers: Union[dict[str, str], None] = None,
+        data: dict[str, Any] | BaseModel,
+        additional_headers: dict[str, str] | None = None,
     ) -> None:
         self.data = data
         self.additional_headers = additional_headers
-        self.route: Union[SpyRoute, None] = None
+        self.route: SpyRoute | None = None
 
     @property
     def response(self: Self) -> dict[str, Any]:
@@ -35,11 +35,12 @@ class JSONResponse(BaseResponseSPY):
         if self.additional_headers is not None:
             headers.update(self.additional_headers)
 
-        if self.route.response_class is not None and isinstance(self.data, dict):
+        if self.route is not None and self.route.response_class is not None and isinstance(self.data, dict):
             self.data = self.route.response_class.parse_obj(self.data)
 
         if (
-            self.route.response_class is not None
+            self.route is not None
+            and self.route.response_class is not None
             and isinstance(self.data, BaseModel)
             and not isinstance(self.data, self.route.response_class)
         ):
@@ -48,8 +49,13 @@ class JSONResponse(BaseResponseSPY):
         if isinstance(self.data, BaseModel):
             self.data = self.data.dict()
 
+        if self.route is None or self.route.status_code is None:
+            status_code = 200
+        else:
+            status_code = self.route.status_code
+
         return {
-            "statusCode": self.route.status_code,
+            "statusCode": status_code,
             "body": json.dumps(self.data, cls=JSONEncoder, ensure_ascii=False),
             "headers": headers,
         }
@@ -69,7 +75,7 @@ class ErrorResponse(BaseResponseSPY):
         self: Self,
         errors: list[str],
         status_code: int = 400,
-        additional_headers: Union[dict[str, str], None] = None,
+        additional_headers: dict[str, str] | None = None,
     ) -> None:
         self.errors = errors
         self.status_code = status_code

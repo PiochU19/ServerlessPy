@@ -6,7 +6,7 @@ from typing_extensions import Self  # type: ignore
 
 
 class BaseResponseSPY(ABC):
-    route: Union[BaseModel, None]
+    route: BaseModel | None
 
     @property
     @abstractmethod

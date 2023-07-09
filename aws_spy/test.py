@@ -17,21 +17,21 @@ class Response(BaseModel):
         try:
             return json.loads(self.body)
         except json.JSONDecodeError:
-            return dict()
+            return {}
 
 
 class TestClient:
     __test__ = False
 
     @classmethod
-    def post(
+    def post(  # type: ignore
         cls: type[Self],
         handler: LH,
         *,
-        body: dict[str, Any] = None,
-        headers: Union[dict[str, str], None] = None,
-        query_params: Union[dict[str, str], None] = None,
-        path_params: Union[dict[str, str], None] = None,
+        body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        path_params: dict[str, str] | None = None,
     ) -> Response:
         return cls._call(
             handler,
@@ -45,14 +45,14 @@ class TestClient:
         )
 
     @classmethod
-    def delete(
+    def delete(  # type: ignore
         cls: type[Self],
         handler: LH,
         *,
-        body: dict[str, Any] = None,
-        headers: Union[dict[str, str], None] = None,
-        query_params: Union[dict[str, str], None] = None,
-        path_params: Union[dict[str, str], None] = None,
+        body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        path_params: dict[str, str] | None = None,
     ) -> Response:
         return cls._call(
             handler,
@@ -66,14 +66,14 @@ class TestClient:
         )
 
     @classmethod
-    def patch(
+    def patch(  # type: ignore
         cls: type[Self],
         handler: LH,
         *,
-        body: dict[str, Any] = None,
-        headers: Union[dict[str, str], None] = None,
-        query_params: Union[dict[str, str], None] = None,
-        path_params: Union[dict[str, str], None] = None,
+        body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        path_params: dict[str, str] | None = None,
     ) -> Response:
         return cls._call(
             handler,
@@ -87,14 +87,14 @@ class TestClient:
         )
 
     @classmethod
-    def put(
+    def put(  # type: ignore
         cls: type[Self],
         handler: LH,
         *,
-        body: dict[str, Any] = None,
-        headers: Union[dict[str, str], None] = None,
-        query_params: Union[dict[str, str], None] = None,
-        path_params: Union[dict[str, str], None] = None,
+        body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        path_params: dict[str, str] | None = None,
     ) -> Response:
         return cls._call(
             handler,
@@ -108,13 +108,13 @@ class TestClient:
         )
 
     @classmethod
-    def get(
+    def get(  # type: ignore
         cls: type[Self],
         handler: LH,
         *,
-        headers: Union[dict[str, str], None] = None,
-        query_params: Union[dict[str, str], None] = None,
-        path_params: Union[dict[str, str], None] = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        path_params: dict[str, str] | None = None,
     ) -> Response:
         return cls._call(
             handler,
@@ -129,18 +129,16 @@ class TestClient:
     @staticmethod
     def _call(handler: LH, event: dict[str, Any]) -> Response:
         response = handler(event, None)
-        return Response(
-            status_code=response["statusCode"], raw=response, body=response["body"]
-        )
+        return Response(status_code=response["statusCode"], raw=response, body=response["body"])
 
     @staticmethod
     def _build_event(
         *,
         method: Methods,
-        body: dict[str, Any] = None,
-        headers: Union[dict[str, str], None] = None,
-        query_params: Union[dict[str, str], None],
-        path_params: Union[dict[str, str], None],
+        body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None,
+        path_params: dict[str, str] | None,
     ) -> dict[str, Any]:
         if body is None:
             body = {}

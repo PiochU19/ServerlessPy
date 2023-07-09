@@ -9,7 +9,7 @@ RequestBodyType = TypeVar("RequestBodyType", bound=BaseModel)
 
 
 def export_params_from_event(
-    in_event_params: Union[dict[str, Any], None],
+    in_event_params: dict[str, Any] | None,
     expected_params: list[ParamSchema],
     type_: Literal["path", "header", "query"],
 ) -> tuple[dict[str, Any], list[str]]:
@@ -19,17 +19,12 @@ def export_params_from_event(
     for expected_param in expected_params:
         param = in_event_params.get(expected_param.name)
         if param is None and expected_param.is_required:
-            errors.append(
-                f"Required parameter {expected_param.name} not found in {type_}."
-            )
+            errors.append(f"Required parameter {expected_param.name} not found in {type_}.")
             continue
         try:
             param = expected_param.annotation(param) if param is not None else None
         except ValueError:
-            errors.append(
-                f"{expected_param.name} should be "
-                f"{expected_param.annotation.__name__} type."
-            )
+            errors.append(f"{expected_param.name} should be {expected_param.annotation.__name__} type.")
             continue
         args[expected_param.arg_name] = param
 
@@ -38,7 +33,7 @@ def export_params_from_event(
 
 def export_request_body(
     body: str, request_body_class: type[RequestBodyType]
-) -> tuple[Union[RequestBodyType, dict[str, Any], None], list[str]]:
+) -> tuple[RequestBodyType | dict[str, Any] | None, list[str]]:
     try:
         body = json.loads(body)
     except json.JSONDecodeError:
@@ -49,10 +44,7 @@ def export_request_body(
         errors = []
         for error in e.errors():
             if error["type"].startswith("type_error"):
-                errors.append(
-                    f'Wrong type received at: {error["loc"][0]}. '
-                    f'Expected: {error["type"].split(".")[-1]}'
-                )
+                errors.append(f'Wrong type received at: {error["loc"][0]}. Expected: {error["type"].split(".")[-1]}')
                 continue
             if error["type"].endswith("missing"):
                 errors.append(f'Value not found at: {error["loc"][0]}')

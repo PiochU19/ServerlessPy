@@ -14,7 +14,7 @@ class ParamType(str, Enum):
 class Param(ABC):
     in_: ParamType
 
-    def __init__(self: Self, name: Union[str, None]) -> None:
+    def __init__(self: Self, name: str | None) -> None:
         self.name = name
 
 

@@ -2,11 +2,12 @@ import json
 import os
 import sys
 from argparse import ArgumentParser
+from collections.abc import Callable
 from distutils.dir_util import copy_tree
 from distutils.file_util import copy_file
 from functools import wraps
 from pathlib import Path
-from typing import Callable, get_args
+from typing import get_args
 
 from aws_spy import SpyAPI
 from aws_spy.core import logger
@@ -41,9 +42,7 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
                     return
 
             is_required = is_type_required(argument_type_hint)
-            argument_type = (
-                argument_type_hint if is_required else get_args(argument_type_hint)[0]
-            )
+            argument_type = argument_type_hint if is_required else get_args(argument_type_hint)[0]
 
             parser.add_argument(
                 f"-{argument_name[0]}",
@@ -52,11 +51,7 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
                 required=is_required,
             )
         function_kwargs.update(
-            {
-                name: value
-                for name, value in parser.parse_args().__dict__.items()
-                if name not in ("function", "app")
-            }
+            {name: value for name, value in parser.parse_args().__dict__.items() if name not in ("function", "app")}
         )
         return function(**function_kwargs)
 
@@ -71,19 +66,20 @@ def deploy_layer(stage: str, region: str) -> None:
             site_packages = path
 
     if site_packages is None:
-        raise PythonEnvironmentException("Couldn't find site-packages folder.")
+        msg = "Couldn't find site-packages folder."
+        raise PythonEnvironmentException(msg)
+    spy_package_name = "aws_spy"
 
-    serverlesspy_path = Path(os.path.join(site_packages, "serverlesspy"))
+    serverlesspy_path = Path(os.path.join(site_packages, spy_package_name))
     layer_path = Path(os.path.join(serverlesspy_path, "layer", "spy", "python"))
-    serverless_layer_path = Path(os.path.join(layer_path, "serverlesspy"))
+    serverless_layer_path = Path(os.path.join(layer_path, spy_package_name))
     serverless_layer_path.mkdir(parents=True, exist_ok=True)
 
     for package in ("pydantic",):
         package_path = Path(os.path.join(site_packages, package))
         if not package_path.is_dir():
-            raise PythonEnvironmentException(
-                f'Could not find "{package}" package. Make sure it is installed in your current environment.'
-            )
+            msg = f'Could not find "{package}" package. Make sure it is installed in your current environment.'
+            raise PythonEnvironmentException(msg)
         copy_tree(str(package_path), os.path.join(layer_path, package))
 
     copy_file(
@@ -116,23 +112,17 @@ def generate_openapi(app: SpyAPI, path: str) -> None:
 @unpack_args
 def generate_serverless_file(app: SpyAPI, path: str) -> None:
     if not path.endswith(".yml"):
-        raise WrongArgumentException("File is not YAML file.")
+        msg = "File is not YAML file."
+        raise WrongArgumentException(msg)
 
     functions: dict[str, Function] = {}
     for route_path, route_dict in app.routes.items():
         for method, route in route_dict.items():
-            if (
-                route.authorizer is not None
-                and route.authorizer
-                not in app.config.provider.httpApi.authorizers.keys()
-            ):
-                raise RouteDefinitionException(
-                    f"Authorizer {route.authorizer} not defined"
-                )
+            if route.authorizer is not None and route.authorizer not in app.config.provider.httpApi.authorizers.keys():
+                msg = f"Authorizer {route.authorizer} not defined"
+                raise RouteDefinitionException(msg)
 
-            functions[route.name] = Function.from_route(
-                route=route, method=method, path=route_path
-            )
+            functions[route.name] = Function.from_route(route=route, method=method, path=route_path)
 
     app.config.functions = functions
 

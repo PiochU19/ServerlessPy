@@ -29,19 +29,13 @@ def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
                 "description": "Successful response",
                 "content": {
                     "application/json": {
-                        "schema": PydanticSchema(schema_class=route.response_class)
-                        if route.response_class
-                        else {}
+                        "schema": PydanticSchema(schema_class=route.response_class) if route.response_class else {}
                     }
                 },
             },
             422: {
                 "description": "Validation Error",
-                "content": {
-                    "application/json": {
-                        "schema": {"$ref": "#/components/schemas/SPY422ErrorResponse"}
-                    }
-                },
+                "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SPY422ErrorResponse"}}},
             },
         }
     }
@@ -69,9 +63,7 @@ def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
                 "requestBody": {
                     "content": {  # type: ignore
                         "application/json": {
-                            "schema": PydanticSchema(schema_class=route.request_body)
-                            if route.request_body
-                            else {}
+                            "schema": PydanticSchema(schema_class=route.request_body) if route.request_body else {}
                         }
                     }
                 }
@@ -81,9 +73,7 @@ def _get_path_item(method: Methods, route: SpyRoute) -> dict[str, Any]:
     return item
 
 
-def construct_base_open_api(
-    title: str, version: Union[str, None], routes: dict[str, dict[Methods, SpyRoute]]
-) -> OpenAPI:
+def construct_base_open_api(title: str, version: str | None, routes: dict[str, dict[Methods, SpyRoute]]) -> OpenAPI:
     info = {"title": title}
     if version is not None:
         info["version"] = version
@@ -91,10 +81,7 @@ def construct_base_open_api(
         {
             "info": info,
             "paths": {
-                path: {
-                    method: _get_path_item(method, route)
-                    for method, route in route_dict.items()
-                }
+                path: {method: _get_path_item(method, route) for method, route in route_dict.items()}
                 for path, route_dict in routes.items()
             },
             "components": {
@@ -117,9 +104,7 @@ def construct_base_open_api(
                         "properties": {
                             "errors": {
                                 "type": "array",
-                                "items": {
-                                    "$ref": "#/components/schemas/SPY422SingleError"
-                                },
+                                "items": {"$ref": "#/components/schemas/SPY422SingleError"},
                                 "example": [
                                     "Wrong type received at: age. Expected: integer",
                                     "Value not found at: name",
@@ -135,11 +120,9 @@ def construct_base_open_api(
     )
 
 
-def get_openapi(
-    title: str, version: Union[str, None], routes: dict[str, dict[Methods, SpyRoute]]
-) -> dict[str, Any]:
+def get_openapi(title: str, version: str | None, routes: dict[str, dict[Methods, SpyRoute]]) -> dict[str, Any]:
     return json.loads(
-        construct_open_api_with_schema_class(
-            construct_base_open_api(title, version, routes)
-        ).json(by_alias=True, exclude_none=True, indent=2)
+        construct_open_api_with_schema_class(construct_base_open_api(title, version, routes)).json(
+            by_alias=True, exclude_none=True, indent=2
+        )
     )

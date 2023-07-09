@@ -1,8 +1,9 @@
 import inspect
 import os
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Literal, TypeVar, Union
+from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, Field, root_validator, validator
 from typing_extensions import Self  # type: ignore
@@ -57,25 +58,25 @@ class SpyRoute(BaseModel):
     method: Methods
     handler: LH
     status_code: int
-    tags: Union[list[str], None]
+    tags: list[str] | None
     summary: str = Field("API endpoint")
-    description: Union[str, None]
-    request_body_arg_name: Union[str, None]
-    request_body: Union[type[BaseModel], None]
-    response_class: Union[type[BaseModel], None]
+    description: str | None
+    request_body_arg_name: str | None
+    request_body: type[BaseModel] | None
+    response_class: type[BaseModel] | None
     header_params: list[ParamSchema] = Field(default_factory=list)
     path_params: list[ParamSchema] = Field(default_factory=list)
     query_params: list[ParamSchema] = Field(default_factory=list)
     use_vpc: bool = Field(True)
-    authorizer: Union[str, None] = Field(None)
+    authorizer: str | None = Field(None)
     layers: list[str] = Field(default_factory=list)
     add_event: bool = Field(default=False)
     add_context: bool = Field(default=False)
     skip_validation: bool = Field(default=False)
 
     @root_validator(pre=True)
-    def set_status_code(
-        cls: type[Self],
+    def set_status_code(  # type: ignore
+        cls: type[Self],  # noqa: N805
         values: dict[str, Any],
     ) -> dict[str, Any]:
         if values.get("status_code") is None:
@@ -84,12 +85,12 @@ class SpyRoute(BaseModel):
         return values
 
     @validator("summary", pre=True)
-    def set_summary(cls: type[Self], summary: Union[str, None]) -> str:
+    def set_summary(cls: type[Self], summary: str | None) -> str:  # type: ignore  # noqa: N805
         return summary or "API endpoint"
 
     @root_validator
-    def validate_handler_params(
-        cls: type[Self],
+    def validate_handler_params(  # type: ignore
+        cls: type[Self],  # noqa: N805
         values: dict[str, Any],
     ) -> dict[str, Any]:
         method: Methods = values["method"]
@@ -109,36 +110,29 @@ class SpyRoute(BaseModel):
             values["add_context"] = True
             args_count -= 1
         if handler_args.count != args_count and not values["skip_validation"]:
-            raise RouteDefinitionException(
-                f'Unrecognized params for {method.upper()} method on "{path}" path!'
-            )
+            msg = f'Unrecognized params for {method.upper()} method on "{path}" path!'
+            raise RouteDefinitionException(msg)
 
         for path_param in path_params:
             if path_param not in handler_args.path.keys():
-                raise RouteDefinitionException(
-                    f"You did not specify {path_param} in your handler arguments!"
-                )
+                msg = f"You did not specify {path_param} in your handler arguments!"
+                raise RouteDefinitionException(msg)
 
         for path_arg in handler_args.path.keys():
             if path_arg not in path_params:
-                raise RouteDefinitionException(
-                    f"Your {path_arg} path parameter is missing in "
-                    f'{method.upper()} method on "{path}" path!'
-                )
+                msg = f'Your {path_arg} path parameter is missing in {method.upper()} method on "{path}" path!'
+                raise RouteDefinitionException(msg)
 
         if method in (Methods.GET, Methods.DELETE) and handler_args.request_body:
-            raise RouteDefinitionException(
-                f'{method.upper()} method on "{path}" cannot have request body!'
-            )
+            msg = f'{method.upper()} method on "{path}" cannot have request body!'
+            raise RouteDefinitionException(msg)
 
         if handler_args.request_body:
             values["request_body"] = handler_args.request_body
             values["request_body_arg_name"] = handler_args.request_body_arg_name
 
         for attr_name in ("path", "query", "header"):
-            values[f"{attr_name}_params"] += [
-                param for _, param in getattr(handler_args, attr_name).items()
-            ]
+            values[f"{attr_name}_params"] += [param for _, param in getattr(handler_args, attr_name).items()]
 
         return values
 
@@ -171,24 +165,22 @@ class JSONFileRef(_JSONFileRef):
         return str(instance)
 
 
-def build_cognito_issue_url(
-    user_pool_id: Union[str, CloudFormationRef, JSONFileRef]
-) -> str:
+def build_cognito_issue_url(user_pool_id: str | CloudFormationRef | JSONFileRef) -> str:
     return f"https://cognito-idp.${{region}}.amazonaws.com/{user_pool_id}"
 
 
 class Authorizer(BaseModel):
-    type: Literal["jwt"] = "jwt"
-    identitySource: str = "$request.header.Authorization"
-    issuerUrl: str
-    audience: list[Union[str, CloudFormationRef, JSONFileRef]]
+    type: Literal["jwt"] = "jwt"  # noqa: A003
+    identitySource: str = "$request.header.Authorization"  # noqa: N815
+    issuerUrl: str  # noqa: N815
+    audience: list[str | CloudFormationRef | JSONFileRef]
 
 
 class CORS(BaseModel):
-    allowedHeaders: list[str]
-    exposedResponseHeaders: list[str]
-    allowedMethods: list[str]
-    allowedOrigins: list[str]
+    allowedHeaders: list[str]  # noqa: N815
+    exposedResponseHeaders: list[str]  # noqa: N815
+    allowedMethods: list[str]  # noqa: N815
+    allowedOrigins: list[str]  # noqa: N815
 
 
 class HTTPApi(BaseModel):
@@ -197,37 +189,30 @@ class HTTPApi(BaseModel):
 
 
 class VPC(BaseModel):
-    securityGroupIds: list[Union[str, CloudFormationRef, JSONFileRef]]
-    subnetIds: list[Union[str, CloudFormationRef, JSONFileRef]]
+    securityGroupIds: list[str | CloudFormationRef | JSONFileRef]  # noqa: N815
+    subnetIds: list[str | CloudFormationRef | JSONFileRef]  # noqa: N815
 
 
 class Function(BaseModel):
     handler: str
     module: str
     events: list[dict[str, Any]]
-    layers: list[Union[str, CloudFormationRef, JSONFileRef]]
-    environment: Union[dict[str, Any], None] = Field(None)
+    layers: list[str | CloudFormationRef | JSONFileRef]
+    environment: dict[str, Any] | None = Field(None)
 
     @staticmethod
     def generate_rel_path_for_function(route: SpyRoute) -> str:
-        return os.path.relpath(
-            Path(route.handler.__code__.co_filename), Path().resolve()
-        )
+        return os.path.relpath(Path(route.handler.__code__.co_filename), Path().resolve())
 
     @classmethod
-    def from_route(
-        cls: type[Self], *, route: SpyRoute, path: str, method: Methods
-    ) -> Self:
+    def from_route(cls: type[Self], *, route: SpyRoute, path: str, method: Methods) -> Self:  # type: ignore
         rel_path = cls.generate_rel_path_for_function(route)
         http_api_event: dict[str, Any] = {"path": path, "method": method.upper()}
         if route.authorizer:
             http_api_event["authorizer"] = {"name": route.authorizer}
 
         return cls(
-            handler=(
-                f'{rel_path.split(os.sep)[-1].replace(".py", "")}'
-                f".{route.handler.__name__}"
-            ),
+            handler=(f'{rel_path.split(os.sep)[-1].replace(".py", "")}' f".{route.handler.__name__}"),  # noqa: ISC001
             module="/".join(rel_path.split(os.sep)[:-1]),
             events=[{"httpApi": http_api_event}],
             layers=list(
@@ -237,8 +222,8 @@ class Function(BaseModel):
                             stack_name="spy-layer",
                             export_name="ServerlesspyLayerExport",
                         )
-                    ]
-                    + route.layers  # type: ignore
+                    ],
+                    *route.layers,  # type: ignore
                 )
             ),
         )
@@ -248,24 +233,22 @@ class Provider(BaseModel):
     name: str = "aws"
     runtime: str = "python3.9"
     region: str
-    role: Union[str, CloudFormationRef, JSONFileRef]
-    httpApi: HTTPApi
-    vpc: Union[VPC, None]
+    role: str | CloudFormationRef | JSONFileRef
+    httpApi: HTTPApi  # noqa: N815
+    vpc: VPC | None
 
 
 class ServerlessConfig(YamlModel):
     service: str
-    custom: Union[dict[str, Any], None] = Field(None)
+    custom: dict[str, Any] | None = Field(None)
     plugins: list[str]
-    configValidationMode: str = "error"
+    configValidationMode: str = "error"  # noqa: N815
     provider: Provider
     package: dict[str, bool] = Field({"individually": True})
-    functions: Union[dict[str, Function], None] = Field(None)
+    functions: dict[str, Function] | None = Field(None)
 
     @validator("plugins", pre=True)
-    def set_default_plugins(
-        cls: type[Self], value: Union[list[str], None]
-    ) -> list[str]:
+    def set_default_plugins(cls: type[Self], value: list[str] | None) -> list[str]:  # type: ignore  # noqa: N805
         value = value if value is not None else []
         value += [
             "serverless-python-requirements",

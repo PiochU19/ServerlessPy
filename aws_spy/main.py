@@ -1,8 +1,8 @@
 from functools import wraps
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel
-from typing_extensions import Self  # type: ignore
+from typing_extensions import Self
 
 from aws_spy.core.event_utils import export_params_from_event, export_request_body
 from aws_spy.core.exceptions import RouteDefinitionException
@@ -15,14 +15,14 @@ class _SPY:
     routes: dict[str, dict[Methods, SpyRoute]]
     function_unique_ids: set[str]
 
-    def __init__(self: Self, prefix: Union[str, None] = None) -> None:
+    def __init__(self: Self, prefix: str | None = None) -> None:
         self.routes = {}
         self.function_unique_ids = set()
         if isinstance(prefix, str) and not prefix.startswith("/"):
             prefix = "/" + prefix
         self.prefix = prefix or ""
 
-    def register_router(self: Self, router: Self) -> None:
+    def register_router(self: Self, router: Any) -> None:
         for path, methods in router.routes.items():
             for method, route in methods.items():
                 self.add_route(path, method, route)
@@ -32,15 +32,12 @@ class _SPY:
             path = "/" + path
         path = self.prefix + path
         if route.name in self.function_unique_ids:
-            raise RouteDefinitionException(
-                f"There is already {route.name} lambda registered."
-            )
+            msg = f"There is already {route.name} lambda registered."
+            raise RouteDefinitionException(msg)
 
         if path in self.routes.keys() and method in self.routes[path]:
-            raise RouteDefinitionException(
-                f'There is already existing "{method.upper()}" '
-                'method definition under "{path}" path.'
-            )
+            msg = f'There is already existing "{method.upper()}" method definition under "{{path}}" path.'
+            raise RouteDefinitionException(msg)
 
         if path not in self.routes.keys():
             self.routes[path] = {}
@@ -54,14 +51,14 @@ class _SPY:
         method: Methods,
         path: str,
         name: str,
-        authorizer: Union[str, None] = None,
-        response_class: Union[type[BaseModel], None] = None,
-        status_code: Union[int, None] = None,
-        tags: Union[list[str], None] = None,
-        summary: Union[str, None] = None,
-        description: Union[str, None] = None,
-        use_vpc: Union[bool, None] = None,
-        skip_validation: Union[bool, None] = None,
+        authorizer: str | None = None,
+        response_class: type[BaseModel] | None = None,
+        status_code: int | None = None,
+        tags: list[str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
+        use_vpc: bool | None = None,
+        skip_validation: bool | None = None,
     ) -> Decorator:
         def decorator(handler: LH) -> LH:
             route = SpyRoute(
@@ -88,23 +85,15 @@ class _SPY:
                 context = args[1]
                 kwargs, errors = {}, []
                 for params, errors_ in [
-                    export_params_from_event(
-                        event.get("pathParameters"), route.path_params, "path"
-                    ),
-                    export_params_from_event(
-                        event.get("headers"), route.header_params, "header"
-                    ),
-                    export_params_from_event(
-                        event.get("queryStringParameters"), route.query_params, "query"
-                    ),
+                    export_params_from_event(event.get("pathParameters"), route.path_params, "path"),
+                    export_params_from_event(event.get("headers"), route.header_params, "header"),
+                    export_params_from_event(event.get("queryStringParameters"), route.query_params, "query"),
                 ]:
                     kwargs.update(params)
                     errors += errors_
 
                 if route.request_body and route.request_body_arg_name:
-                    request_body, request_body_errors = export_request_body(
-                        event.get("body", ""), route.request_body
-                    )
+                    request_body, request_body_errors = export_request_body(event.get("body", ""), route.request_body)
                     errors += request_body_errors
                     kwargs[route.request_body_arg_name] = request_body
 
@@ -131,12 +120,12 @@ class _SPY:
         path: str,
         name: str,
         *,
-        authorizer: Union[str, None] = None,
-        response_class: Union[type[BaseModel], None] = None,
-        status_code: Union[int, None] = None,
-        tags: Union[list[str], None] = None,
-        summary: Union[str, None] = None,
-        description: Union[str, None] = None,
+        authorizer: str | None = None,
+        response_class: type[BaseModel] | None = None,
+        status_code: int | None = None,
+        tags: list[str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
     ) -> Decorator:
@@ -159,12 +148,12 @@ class _SPY:
         path: str,
         name: str,
         *,
-        authorizer: Union[str, None] = None,
-        response_class: Union[type[BaseModel], None] = None,
-        status_code: Union[int, None] = None,
-        tags: Union[list[str], None] = None,
-        summary: Union[str, None] = None,
-        description: Union[str, None] = None,
+        authorizer: str | None = None,
+        response_class: type[BaseModel] | None = None,
+        status_code: int | None = None,
+        tags: list[str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
     ) -> Decorator:
@@ -187,12 +176,12 @@ class _SPY:
         path: str,
         name: str,
         *,
-        authorizer: Union[str, None] = None,
-        response_class: Union[type[BaseModel], None] = None,
-        status_code: Union[int, None] = None,
-        tags: Union[list[str], None] = None,
-        summary: Union[str, None] = None,
-        description: Union[str, None] = None,
+        authorizer: str | None = None,
+        response_class: type[BaseModel] | None = None,
+        status_code: int | None = None,
+        tags: list[str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
     ) -> Decorator:
@@ -215,12 +204,12 @@ class _SPY:
         path: str,
         name: str,
         *,
-        authorizer: Union[str, None] = None,
-        response_class: Union[type[BaseModel], None] = None,
-        status_code: Union[int, None] = None,
-        tags: Union[list[str], None] = None,
-        summary: Union[str, None] = None,
-        description: Union[str, None] = None,
+        authorizer: str | None = None,
+        response_class: type[BaseModel] | None = None,
+        status_code: int | None = None,
+        tags: list[str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
     ) -> Decorator:
@@ -243,12 +232,12 @@ class _SPY:
         path: str,
         name: str,
         *,
-        authorizer: Union[str, None] = None,
-        response_class: Union[type[BaseModel], None] = None,
-        status_code: Union[int, None] = None,
-        tags: Union[list[str], None] = None,
-        summary: Union[str, None] = None,
-        description: Union[str, None] = None,
+        authorizer: str | None = None,
+        response_class: type[BaseModel] | None = None,
+        status_code: int | None = None,
+        tags: list[str] | None = None,
+        summary: str | None = None,
+        description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
     ) -> Decorator:
@@ -272,10 +261,10 @@ class SpyAPI(_SPY):
         self: Self,
         *,
         config: ServerlessConfig,
-        environment: Union[dict[str, Any], None] = None,
-        title: Union[str, None] = None,
-        version: Union[str, None] = None,
-        prefix: Union[str, None] = None,
+        environment: dict[str, Any] | None = None,
+        title: str | None = None,
+        version: str | None = None,
+        prefix: str | None = None,
     ) -> None:
         super().__init__(prefix)
 
@@ -286,5 +275,5 @@ class SpyAPI(_SPY):
 
 
 class SpyRouter(_SPY):
-    def __init__(self: Self, prefix: Union[str, None] = None) -> None:
+    def __init__(self: Self, prefix: str | None = None) -> None:
         super().__init__(prefix)
