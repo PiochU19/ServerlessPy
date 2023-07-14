@@ -8,6 +8,8 @@ from functools import wraps
 from pathlib import Path
 from typing import get_args
 
+import yaml  # type: ignore
+
 from aws_spy import SpyAPI
 from aws_spy.core import logger
 from aws_spy.core.exceptions import RouteDefinitionError
@@ -115,7 +117,11 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
     functions: dict[str, Function] = {}
     for route_path, route_dict in app.routes.items():
         for method, route in route_dict.items():
-            if route.authorizer is not None and route.authorizer not in app.config.provider.httpApi.authorizers.keys():
+            if route.authorizer is not None and (
+                app.config.provider.httpApi is None
+                or app.config.provider.httpApi.authorizers is None
+                or route.authorizer not in app.config.provider.httpApi.authorizers.keys()
+            ):
                 msg = f"Authorizer {route.authorizer} not defined"
                 raise RouteDefinitionError(msg)
 
@@ -124,7 +130,7 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
     app.config.functions = functions
 
     with open(path, "w") as file:
-        file.write(app.config.yaml(exclude_none=True))
+        yaml.dump(app.config.model_dump(exclude_none=True), file)
 
 
 FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {

@@ -193,8 +193,8 @@ class CORS(BaseModel):
 
 
 class HTTPApi(BaseModel):
-    authorizers: dict[str, Authorizer]
-    cors: CORS
+    authorizers: dict[str, Authorizer] | None = Field(None)
+    cors: CORS | None = Field(None)
 
 
 class VPC(BaseModel):
@@ -240,10 +240,10 @@ class Function(BaseModel):
 
 class Provider(BaseModel):
     name: str = "aws"
-    runtime: str = "python3.9"
-    region: str
-    role: str | CloudFormationRef | JSONFileRef
-    httpApi: HTTPApi  # noqa: N815
+    runtime: str = "python3.10"
+    region: str = "eu_central_1"
+    role: str | CloudFormationRef | JSONFileRef | None = Field(None)
+    httpApi: HTTPApi | None = Field(None)  # noqa: N815
     vpc: VPC | None = Field(None)
 
 

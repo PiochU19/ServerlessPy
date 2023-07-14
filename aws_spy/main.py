@@ -270,7 +270,7 @@ class SpyAPI(_SPY):
 
         self.title = title or "My API"
         self.version = version or "v0.0.1"
-        self.config = config
+        self.config: ServerlessConfig = config
         self.environment = environment
 
 
