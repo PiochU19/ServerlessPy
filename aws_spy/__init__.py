@@ -1,6 +1,6 @@
 """ServerlessPy package ;D"""
 
-__version__ = "0.2.3"
+__version__ = "0.2.8"
 
 from aws_spy import responses
 from aws_spy.core.logging import logger

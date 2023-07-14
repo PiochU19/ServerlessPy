@@ -1,6 +1,6 @@
 ---
 service: spy-layer
-configValidationMode: error
+# configValidationMode: error
 
 provider:
   name: aws

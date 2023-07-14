@@ -50,7 +50,7 @@ DEFAULT_STATUS_CODES = {
 
 class Functions(str, Enum):
     LAYER = "layer"
-    OPENAPI = "openapi"
+    # OPENAPI = "openapi"
     SLS = "sls"
 
 
@@ -179,7 +179,7 @@ def build_cognito_issue_url(user_pool_id: str | CloudFormationRef | JSONFileRef)
 
 
 class Authorizer(BaseModel):
-    type: Literal["jwt"] = "jwt"  # noqa: A003
+    type: Literal["jwt"] = Field("jwt", frozen=True)  # noqa: A003
     identitySource: str = "$request.header.Authorization"  # noqa: N815
     issuerUrl: str  # noqa: N815
     audience: list[str | CloudFormationRef | JSONFileRef]
@@ -239,9 +239,10 @@ class Function(BaseModel):
 
 
 class Provider(BaseModel):
-    name: str = "aws"
-    runtime: str = "python3.10"
+    name: Literal["aws"] = Field("aws", frozen=True)
+    runtime: Literal["python3.10"] = Field("python3.10", frozen=True)
     region: str = "eu_central_1"
+    architecture: Literal["arm64", "x86_64"] = Field("arm64", frozen=True)  # pydantic_core
     role: str | CloudFormationRef | JSONFileRef | None = Field(None)
     httpApi: HTTPApi | None = Field(None)  # noqa: N815
     vpc: VPC | None = Field(None)
@@ -251,7 +252,7 @@ class ServerlessConfig(YamlModel):
     service: str
     custom: dict[str, Any] | None = Field(None)
     plugins: list[str]
-    configValidationMode: str = "error"  # noqa: N815
+    configValidationMode: Literal["error", "warn"] = Field("warn", frozen=True)  # noqa: N815
     provider: Provider
     package: dict[str, bool] = Field({"individually": True})
     functions: dict[str, Function] | None = Field(None)
