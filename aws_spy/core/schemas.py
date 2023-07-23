@@ -17,18 +17,15 @@ from aws_spy.core.schemas_utils import (
 
 # from aws_spy.dependencies import DependencySchema, get_dependencies
 
-# pydantic_yaml won't be in the layer
-try:
-    from pydantic_yaml import YamlModel  # type: ignore
-except ImportError:  # pragma: no cover
-
-    class YamlModel(BaseModel):  # type: ignore
-        ...
-
 
 LHReturnType = TypeVar("LHReturnType")
 LH = Callable[..., LHReturnType]  # Lambda Handler
 Decorator = Callable[[LH], LH]
+MANDATORY_PLUGINS = [
+    "serverless-python-requirements",
+    "serverless-plugin-common-excludes",
+    "serverless-plugin-include-dependencies",
+]
 
 
 class Methods(str, Enum):
@@ -54,28 +51,67 @@ class Functions(str, Enum):
     SLS = "sls"
 
 
-class SpyRoute(BaseModel):
+class _CloudFormationRef(BaseModel):
+    stack_name: str
+    export_name: str
+
+    def __str__(self: Self) -> str:
+        return f"${{cf:{self.stack_name}-${{opt:stage}}.{self.export_name}}}"
+
+
+class CloudFormationRef(_CloudFormationRef):
+    def __new__(cls: type[Self], stack_name: str, export_name: str) -> str:  # type: ignore
+        instance = _CloudFormationRef(stack_name=stack_name, export_name=export_name)
+        return str(instance)
+
+
+class _JSONFileRef(BaseModel):
+    file_path: str
+    field: str
+
+    def __str__(self: Self) -> str:
+        return f"${{file({self.file_path}):{self.field}}}"
+
+
+class JSONFileRef(_JSONFileRef):
+    def __new__(cls: type[Self], file_path: str, field: str) -> str:  # type: ignore
+        instance = _JSONFileRef(file_path=file_path, field=field)
+        return str(instance)
+
+
+class SpyBaseModel(BaseModel):
     name: str
-    path: str
-    method: Methods
     handler: LH
-    status_code: int
-    tags: list[str] | None = Field(None)
-    summary: str = Field("API endpoint")
-    description: str | None = Field(None)
+    use_vpc: bool = Field(True)
+    layers: list[str | CloudFormationRef | JSONFileRef] | None = Field(default_factory=list)
+    add_event: bool = Field(default=False)
+    add_context: bool = Field(default=False)
+    skip_validation: bool = Field(default=False)
     request_body_arg_name: str | None = Field(None)
     request_body: type[BaseModel] | None = Field(None)
     response_class: type[BaseModel] | None = Field(None)
+
+    @field_validator("layers", mode="before")
+    def set_layers(cls: type[Self], layers: list[str] | None) -> list[str]:  # type: ignore  # noqa: N805
+        return layers or []
+
+
+class SpyFunction(SpyBaseModel):
+    ...
+
+
+class SpyRoute(SpyBaseModel):
+    path: str
+    method: Methods
+    status_code: int
+    authorizer: str | None = Field(None)
+    tags: list[str] | None = Field(None)
+    summary: str = Field("API endpoint")
+    description: str | None = Field(None)
     header_params: list[ParamSchema] = Field(default_factory=list)
     path_params: list[ParamSchema] = Field(default_factory=list)
     query_params: list[ParamSchema] = Field(default_factory=list)
     # dependencies: list[DependencySchema] = Field(default_factory=list)
-    use_vpc: bool = Field(True)
-    authorizer: str | None = Field(None)
-    layers: list[str] = Field(default_factory=list)
-    add_event: bool = Field(default=False)
-    add_context: bool = Field(default=False)
-    skip_validation: bool = Field(default=False)
 
     @model_validator(mode="before")
     def set_status_code(  # type: ignore
@@ -146,34 +182,6 @@ class SpyRoute(BaseModel):
         return model
 
 
-class _CloudFormationRef(BaseModel):
-    stack_name: str
-    export_name: str
-
-    def __str__(self: Self) -> str:
-        return f"${{cf:{self.stack_name}-${{opt:stage}}.{self.export_name}}}"
-
-
-class CloudFormationRef(_CloudFormationRef):
-    def __new__(cls: type[Self], stack_name: str, export_name: str) -> str:  # type: ignore
-        instance = _CloudFormationRef(stack_name=stack_name, export_name=export_name)
-        return str(instance)
-
-
-class _JSONFileRef(BaseModel):
-    file_path: str
-    field: str
-
-    def __str__(self: Self) -> str:
-        return f"${{file({self.file_path}):{self.field}}}"
-
-
-class JSONFileRef(_JSONFileRef):
-    def __new__(cls: type[Self], file_path: str, field: str) -> str:  # type: ignore
-        instance = _JSONFileRef(file_path=file_path, field=field)
-        return str(instance)
-
-
 def build_cognito_issue_url(user_pool_id: str | CloudFormationRef | JSONFileRef) -> str:
     return f"https://cognito-idp.${{region}}.amazonaws.com/{user_pool_id}"
 
@@ -205,13 +213,46 @@ class VPC(BaseModel):
 class Function(BaseModel):
     handler: str
     module: str
-    events: list[dict[str, Any]]
+    events: list[dict[str, Any]] | None = Field(None)
     layers: list[str | CloudFormationRef | JSONFileRef]
     environment: dict[str, Any] | None = Field(None)
 
     @staticmethod
     def generate_rel_path_for_function(route: SpyRoute) -> str:
         return os.path.relpath(Path(route.handler.__code__.co_filename), Path().resolve())
+
+    @staticmethod
+    def build_handler_string(relative_path: str, function_name: str) -> str:
+        return relative_path.split(os.sep)[-1].replace(".py", "") + f".{function_name}"
+
+    @staticmethod
+    def build_module_string(relative_path: str) -> str:
+        return "/".join(relative_path.split(os.sep)[:-1])
+
+    @staticmethod
+    def build_layers(
+        layers: list[str | CloudFormationRef | JSONFileRef],
+    ) -> list[str | CloudFormationRef | JSONFileRef]:
+        return list(
+            set(
+                [  # noqa: RUF005
+                    CloudFormationRef(
+                        stack_name="spy-layer",
+                        export_name="ServerlesspyLayerExport",
+                    )
+                ]
+                + layers,
+            )
+        )
+
+    @classmethod
+    def from_function(cls: type[Self], *, function: SpyFunction) -> Self:  # type: ignore
+        rel_path = cls.generate_rel_path_for_function(function)
+        return cls(
+            handler=cls.build_handler_string(rel_path, function.handler.__name__),
+            module=cls.build_module_string(rel_path),
+            layers=cls.build_layers(function.layers),  # type: ignore
+        )
 
     @classmethod
     def from_route(cls: type[Self], *, route: SpyRoute, path: str, method: Methods) -> Self:  # type: ignore
@@ -221,34 +262,24 @@ class Function(BaseModel):
             http_api_event["authorizer"] = {"name": route.authorizer}
 
         return cls(
-            handler=(f'{rel_path.split(os.sep)[-1].replace(".py", "")}' f".{route.handler.__name__}"),  # noqa: ISC001
-            module="/".join(rel_path.split(os.sep)[:-1]),
+            handler=cls.build_handler_string(rel_path, route.handler.__name__),
+            module=cls.build_module_string(rel_path),
             events=[{"httpApi": http_api_event}],
-            layers=list(
-                set(
-                    [
-                        CloudFormationRef(
-                            stack_name="spy-layer",
-                            export_name="ServerlesspyLayerExport",
-                        )
-                    ],
-                    *route.layers,  # type: ignore
-                )
-            ),
+            layers=cls.build_layers(route.layers),  # type: ignore
         )
 
 
 class Provider(BaseModel):
     name: Literal["aws"] = Field("aws", frozen=True)
     runtime: Literal["python3.10"] = Field("python3.10", frozen=True)
-    region: str = "eu_central_1"
+    region: str = "eu-central-1"
     architecture: Literal["arm64", "x86_64"] = Field("arm64", frozen=True)  # pydantic_core
     role: str | CloudFormationRef | JSONFileRef | None = Field(None)
     httpApi: HTTPApi | None = Field(None)  # noqa: N815
     vpc: VPC | None = Field(None)
 
 
-class ServerlessConfig(YamlModel):
+class ServerlessConfig(BaseModel):
     service: str
     custom: dict[str, Any] | None = Field(None)
     plugins: list[str]
@@ -257,12 +288,13 @@ class ServerlessConfig(YamlModel):
     package: dict[str, bool] = Field({"individually": True})
     functions: dict[str, Function] | None = Field(None)
 
-    @field_validator("plugins", mode="before")
-    def set_default_plugins(cls: type[Self], value: list[str] | None) -> list[str]:  # type: ignore  # noqa: N805
-        value = value if value is not None else []
-        value += [
-            "serverless-python-requirements",
-            "serverless-plugin-common-excludes",
-            "serverless-plugin-include-dependencies",
-        ]
-        return list(set(value))
+    @model_validator(mode="before")
+    def set_default_plugins(  # type: ignore
+        cls: type[Self],  # noqa: N805
+        values: dict[str, Any],
+    ) -> dict[str, Any]:
+        provided_plugins = values.get("plugins")
+        provided_plugins = provided_plugins if provided_plugins is not None else []
+        values["plugins"] = list(set(provided_plugins + MANDATORY_PLUGINS))
+
+        return values

@@ -25,21 +25,6 @@ dependencies = [
     "pyyaml>=6.0"
 ]
 
-[tool.pdm.dev-dependencies]
-linting = [
-    "black",
-    "ruff",
-    "mypy~=1.1.1",
-]
-testing = [
-    "coverage[toml]",
-    "dirty-equals",
-    "pytest",
-]
-mypy = [
-    "mypy",
-]
-
 [project.urls]
 Homepage = "https://github.com/PiochU19/aws-spy"
 Documentation = "https://github.com/PiochU19/aws-spy#readme"
@@ -121,4 +106,20 @@ exclude_lines = [
   "if typing.TYPE_CHECKING:",
   "@overload",
   "@typing.overload"
+]
+
+[tool.pdm.dev-dependencies]
+linting = [
+    "black",
+    "ruff",
+    "mypy~=1.1.1",
+]
+testing = [
+    "coverage[toml]",
+    "dirty-equals",
+    "pytest",
+    "deepdiff>=6.3.1"
+]
+mypy = [
+    "mypy",
 ]

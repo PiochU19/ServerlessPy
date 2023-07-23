@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys as _sys
 from typing import Any as _Any
 
-from ._pydantic_core import (
+from pydantic_core._pydantic_core import (
     ArgsKwargs,
     MultiHostUrl,
     PydanticCustomError,
@@ -24,43 +24,40 @@ from ._pydantic_core import (
     to_json,
     to_jsonable_python,
 )
-from .core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
+from pydantic_core.core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
 
 if _sys.version_info < (3, 11):
     from typing_extensions import NotRequired as _NotRequired
 else:
     from typing import NotRequired as _NotRequired  # type: ignore
 
-if _sys.version_info < (3, 9):
-    from typing_extensions import TypedDict as _TypedDict
-else:
-    from typing import TypedDict as _TypedDict
+from typing import TypedDict as _TypedDict
 
 __all__ = [
-    '__version__',
-    'CoreConfig',
-    'CoreSchema',
-    'CoreSchemaType',
-    'SchemaValidator',
-    'SchemaSerializer',
-    'Some',
-    'Url',
-    'MultiHostUrl',
-    'ArgsKwargs',
-    'PydanticUndefined',
-    'PydanticUndefinedType',
-    'SchemaError',
-    'ErrorDetails',
-    'InitErrorDetails',
-    'ValidationError',
-    'PydanticCustomError',
-    'PydanticKnownError',
-    'PydanticOmit',
-    'PydanticUseDefault',
-    'PydanticSerializationError',
-    'PydanticSerializationUnexpectedValue',
-    'to_json',
-    'to_jsonable_python',
+    "__version__",
+    "CoreConfig",
+    "CoreSchema",
+    "CoreSchemaType",
+    "SchemaValidator",
+    "SchemaSerializer",
+    "Some",
+    "Url",
+    "MultiHostUrl",
+    "ArgsKwargs",
+    "PydanticUndefined",
+    "PydanticUndefinedType",
+    "SchemaError",
+    "ErrorDetails",
+    "InitErrorDetails",
+    "ValidationError",
+    "PydanticCustomError",
+    "PydanticKnownError",
+    "PydanticOmit",
+    "PydanticUseDefault",
+    "PydanticSerializationError",
+    "PydanticSerializationUnexpectedValue",
+    "to_json",
+    "to_jsonable_python",
 ]
 
 

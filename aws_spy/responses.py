@@ -21,9 +21,12 @@ class JSONResponse(BaseResponseSPY):
     def __init__(
         self: Self,
         data: dict[str, Any] | BaseModel,
+        *,
+        status_code: int | None = None,
         additional_headers: dict[str, str] | None = None,
     ) -> None:
         self.data = data
+        self.status_code = status_code
         self.additional_headers = additional_headers
         self.route: SpyRoute | None = None
 
@@ -49,7 +52,9 @@ class JSONResponse(BaseResponseSPY):
         if isinstance(self.data, BaseModel):
             self.data = self.data.model_dump()
 
-        if self.route is None or self.route.status_code is None:
+        if self.status_code is not None:
+            status_code = self.status_code
+        elif self.route is None or self.route.status_code is None:
             status_code = 200
         else:
             status_code = self.route.status_code

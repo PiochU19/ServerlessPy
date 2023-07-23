@@ -58,7 +58,7 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
 
 
 @unpack_args
-def deploy_layer(stage: str, region: str) -> None:
+def _deploy_layer(stage: str, region: str) -> None:
     site_packages = None
     for path in sys.path:
         if path.endswith("site-packages"):
@@ -109,6 +109,10 @@ def deploy_layer(stage: str, region: str) -> None:
 
 
 @unpack_args
+def _generate_serverless_file(app: SpyAPI, path: str) -> None:
+    return generate_serverless_file(app=app, path=path)
+
+
 def generate_serverless_file(app: SpyAPI, path: str) -> None:
     if not path.endswith(".yml"):
         msg = "File is not YAML file."
@@ -126,6 +130,8 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
                 raise RouteDefinitionError(msg)
 
             functions[route.name] = Function.from_route(route=route, method=method, path=route_path)
+    for function in app.functions:
+        functions[function.name] = Function.from_function(function=function)
 
     app.config.functions = functions
 
@@ -134,9 +140,9 @@ def generate_serverless_file(app: SpyAPI, path: str) -> None:
 
 
 FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {
-    "layer": deploy_layer,
+    "layer": _deploy_layer,
     # "openapi": generate_openapi,
-    "sls": generate_serverless_file,
+    "sls": _generate_serverless_file,
 }
 
 

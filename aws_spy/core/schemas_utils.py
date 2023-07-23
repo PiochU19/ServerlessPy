@@ -55,31 +55,34 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
     request_body = None
     request_body_arg_name = None
     for arg_name, arg_value in inspect.signature(handler).parameters.items():
-        if _is_request_body(arg_value) and request_body is None:
-            request_body = arg_value.annotation
-            request_body_arg_name = arg_name
+        try:
+            if _is_request_body(arg_value) and request_body is None:
+                request_body = arg_value.annotation
+                request_body_arg_name = arg_name
+                continue
+            if _is_param(arg_value):
+                param: Param = arg_value.default
+                param_name = param.name if param.name is not None else arg_name
+                if param_name in params[param.in_].keys():
+                    msg = f'{handler.__name__} expects two same {param.in_} params: "{param_name}"!'
+                    raise RouteDefinitionError(msg)
+
+                enum = None
+                is_required = types.is_type_required(arg_value.annotation)
+                annotation = arg_value.annotation if is_required else types.get_type_from_optional(arg_value.annotation)
+                if issubclass(annotation, Enum):
+                    enum = [e.value for e in annotation]
+
+                params[param.in_][param_name] = ParamSchema(
+                    name=param_name,
+                    in_=arg_value.default,
+                    arg_name=arg_name,
+                    annotation=annotation,
+                    enum=enum,
+                    is_required=is_required,
+                )
+        except TypeError:
             continue
-        if _is_param(arg_value):
-            param: Param = arg_value.default
-            param_name = param.name if param.name is not None else arg_name
-            if param_name in params[param.in_].keys():
-                msg = f'{handler.__name__} expects two same {param.in_} params: "{param_name}"!'
-                raise RouteDefinitionError(msg)
-
-            enum = None
-            is_required = types.is_type_required(arg_value.annotation)
-            annotation = arg_value.annotation if is_required else types.get_type_from_optional(arg_value.annotation)
-            if issubclass(annotation, Enum):
-                enum = [e.value for e in annotation]
-
-            params[param.in_][param_name] = ParamSchema(
-                name=param_name,
-                in_=arg_value.default,
-                arg_name=arg_name,
-                annotation=annotation,
-                enum=enum,
-                is_required=is_required,
-            )
 
     return HandlerArgs(
         query=params[ParamType.QUERY],

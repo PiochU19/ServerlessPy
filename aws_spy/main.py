@@ -5,18 +5,27 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from aws_spy.core.event_utils import export_params_from_event, export_request_body
-from aws_spy.core.exceptions import RouteDefinitionError
+from aws_spy.core.exceptions import FunctionDefinitionError, RouteDefinitionError
 from aws_spy.core.responses import BaseResponseSPY
-from aws_spy.core.schemas import LH, Decorator, Methods, ServerlessConfig, SpyRoute
+from aws_spy.core.schemas import (
+    LH,
+    Decorator,
+    Methods,
+    ServerlessConfig,
+    SpyFunction,
+    SpyRoute,
+)
 from aws_spy.responses import ErrorResponse, JSONResponse
 
 
 class _SPY:
     routes: dict[str, dict[Methods, SpyRoute]]
+    functions: list[SpyFunction]
     function_unique_ids: set[str]
 
     def __init__(self: Self, prefix: str | None = None) -> None:
         self.routes = {}
+        self.functions = []
         self.function_unique_ids = set()
         if isinstance(prefix, str) and not prefix.startswith("/"):
             prefix = "/" + prefix
@@ -26,6 +35,15 @@ class _SPY:
         for path, methods in router.routes.items():
             for method, route in methods.items():
                 self.add_route(path, method, route)
+        for function in router.functions:
+            self.add_function(function)
+
+    def add_function(self: Self, function: SpyFunction) -> None:
+        if function.name in self.function_unique_ids:
+            msg = f"There is already {function.name} lambda registered."
+            raise FunctionDefinitionError(msg)
+        self.function_unique_ids.add(function.name)
+        self.functions.append(function)
 
     def add_route(self: Self, path: str, method: Methods, route: SpyRoute) -> None:
         if not path.startswith("/"):
@@ -36,7 +54,7 @@ class _SPY:
             raise RouteDefinitionError(msg)
 
         if path in self.routes.keys() and method in self.routes[path]:
-            msg = f'There is already existing "{method.upper()}" method definition under "{{path}}" path.'
+            msg = f'There is already existing "{method.upper()}" method definition under "{path}" path.'
             raise RouteDefinitionError(msg)
 
         if path not in self.routes.keys():
@@ -44,6 +62,36 @@ class _SPY:
 
         self.function_unique_ids.add(route.name)
         self.routes[path][method] = route
+
+    def function(
+        self: Self,
+        name: str,
+        *,
+        response_class: type[BaseModel] | None = None,
+        use_vpc: bool | None = False,
+        skip_validation: bool | None = False,
+        layers: list[str] | None = None,
+    ) -> Decorator:
+        def decorartor(handler: LH) -> LH:
+            function = SpyFunction(
+                name=name,
+                handler=handler,
+                response_class=response_class,
+                use_vpc=use_vpc,
+                skip_validation=skip_validation,
+                layers=layers,
+            )
+            self.add_function(function)
+
+            @wraps(handler)
+            def wrapper(*args) -> dict[str, Any]:
+                if function.skip_validation:
+                    return handler(*args)
+                return handler(*args)
+
+            return wrapper
+
+        return decorartor
 
     def route(
         self: Self,
@@ -59,6 +107,7 @@ class _SPY:
         description: str | None = None,
         use_vpc: bool | None = None,
         skip_validation: bool | None = None,
+        layers: list[str] | None = None,
     ) -> Decorator:
         def decorator(handler: LH) -> LH:
             route = SpyRoute(
@@ -74,6 +123,7 @@ class _SPY:
                 authorizer=authorizer,
                 use_vpc=use_vpc,
                 skip_validation=skip_validation,
+                layers=layers,
             )
             self.add_route(path, method, route)
 
@@ -128,6 +178,7 @@ class _SPY:
         description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
+        layers: list[str] | None = None,
     ) -> Decorator:
         return self.route(
             method=Methods.GET,
@@ -141,6 +192,7 @@ class _SPY:
             description=description,
             use_vpc=use_vpc,
             skip_validation=skip_validation,
+            layers=layers,
         )
 
     def post(
@@ -156,6 +208,7 @@ class _SPY:
         description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
+        layers: list[str] | None = None,
     ) -> Decorator:
         return self.route(
             method=Methods.POST,
@@ -169,6 +222,7 @@ class _SPY:
             description=description,
             use_vpc=use_vpc,
             skip_validation=skip_validation,
+            layers=layers,
         )
 
     def delete(
@@ -184,6 +238,7 @@ class _SPY:
         description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
+        layers: list[str] | None = None,
     ) -> Decorator:
         return self.route(
             method=Methods.DELETE,
@@ -197,6 +252,7 @@ class _SPY:
             description=description,
             use_vpc=use_vpc,
             skip_validation=skip_validation,
+            layers=layers,
         )
 
     def put(
@@ -212,6 +268,7 @@ class _SPY:
         description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
+        layers: list[str] | None = None,
     ) -> Decorator:
         return self.route(
             method=Methods.PUT,
@@ -225,6 +282,7 @@ class _SPY:
             description=description,
             use_vpc=use_vpc,
             skip_validation=skip_validation,
+            layers=layers,
         )
 
     def patch(
@@ -240,6 +298,7 @@ class _SPY:
         description: str | None = None,
         use_vpc: bool = True,
         skip_validation: bool = False,
+        layers: list[str] | None = None,
     ) -> Decorator:
         return self.route(
             method=Methods.PATCH,
@@ -253,6 +312,7 @@ class _SPY:
             description=description,
             use_vpc=use_vpc,
             skip_validation=skip_validation,
+            layers=layers,
         )
 
 

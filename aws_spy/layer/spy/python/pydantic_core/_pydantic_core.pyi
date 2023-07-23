@@ -3,64 +3,62 @@ from __future__ import annotations
 import datetime
 import decimal
 import sys
-from typing import Any, Callable, Generic, Optional, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, Generic, Optional, Type, TypeVar, final
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
-if sys.version_info < (3, 8):
-    from typing_extensions import final
-else:
-    from typing import final
-
 if sys.version_info < (3, 11):
-    from typing_extensions import Literal, LiteralString, Self, TypeAlias
+    from typing import Literal, TypeAlias
+
+    from typing_extensions import LiteralString, Self
 else:
     from typing import Literal, LiteralString, Self, TypeAlias
 
 from _typeshed import SupportsAllComparisons
 
 __all__ = [
-    '__version__',
-    'build_profile',
-    'build_info',
-    '_recursion_limit',
-    'ArgsKwargs',
-    'SchemaValidator',
-    'SchemaSerializer',
-    'Url',
-    'MultiHostUrl',
-    'SchemaError',
-    'ValidationError',
-    'PydanticCustomError',
-    'PydanticKnownError',
-    'PydanticOmit',
-    'PydanticUseDefault',
-    'PydanticSerializationError',
-    'PydanticSerializationUnexpectedValue',
-    'PydanticUndefined',
-    'PydanticUndefinedType',
-    'Some',
-    'to_json',
-    'to_jsonable_python',
-    'list_all_errors',
-    'TzInfo',
+    "__version__",
+    "build_profile",
+    "build_info",
+    "_recursion_limit",
+    "ArgsKwargs",
+    "SchemaValidator",
+    "SchemaSerializer",
+    "Url",
+    "MultiHostUrl",
+    "SchemaError",
+    "ValidationError",
+    "PydanticCustomError",
+    "PydanticKnownError",
+    "PydanticOmit",
+    "PydanticUseDefault",
+    "PydanticSerializationError",
+    "PydanticSerializationUnexpectedValue",
+    "PydanticUndefined",
+    "PydanticUndefinedType",
+    "Some",
+    "to_json",
+    "to_jsonable_python",
+    "list_all_errors",
+    "TzInfo",
 ]
 __version__: str
 build_profile: str
 build_info: str
 _recursion_limit: int
 
-_T = TypeVar('_T', default=Any, covariant=True)
+_T = TypeVar("_T", default=Any, covariant=True)
 
 @final
 class Some(Generic[_T]):
-    __match_args__ = ('value',)
+    __match_args__ = ("value",)
 
     @property
     def value(self) -> _T: ...
     @classmethod
-    def __class_getitem__(cls, __item: Any) -> Type[Self]: ...
+    def __class_getitem__(cls, __item: Any) -> type[Self]: ...
 
 @final
 class SchemaValidator:
@@ -73,7 +71,7 @@ class SchemaValidator:
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: 'dict[str, Any] | None' = None,
+        context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> Any: ...
     def isinstance_python(
@@ -82,7 +80,7 @@ class SchemaValidator:
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: 'dict[str, Any] | None' = None,
+        context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> bool: ...
     def validate_json(
@@ -90,7 +88,7 @@ class SchemaValidator:
         input: str | bytes | bytearray,
         *,
         strict: bool | None = None,
-        context: 'dict[str, Any] | None' = None,
+        context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> Any: ...
     def validate_assignment(
@@ -101,7 +99,7 @@ class SchemaValidator:
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: 'dict[str, Any] | None' = None,
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any] | tuple[dict[str, Any], dict[str, Any] | None, set[str]]:
         """
         ModelValidator and ModelFieldsValidator will return a tuple of (fields data, extra data, fields set)
@@ -153,8 +151,8 @@ def to_json(
     by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
-    timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
-    bytes_mode: Literal['utf8', 'base64'] = 'utf8',
+    timedelta_mode: Literal["iso8601", "float"] = "iso8601",
+    bytes_mode: Literal["utf8", "base64"] = "utf8",
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
 ) -> bytes: ...
@@ -166,8 +164,8 @@ def to_jsonable_python(
     by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
-    timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
-    bytes_mode: Literal['utf8', 'base64'] = 'utf8',
+    timedelta_mode: Literal["iso8601", "float"] = "iso8601",
+    bytes_mode: Literal["utf8", "base64"] = "utf8",
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
 ) -> Any: ...
@@ -201,13 +199,13 @@ class Url(SupportsAllComparisons):
         cls,
         *,
         scheme: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
         host: str,
-        port: Optional[int] = None,
-        path: Optional[str] = None,
-        query: Optional[str] = None,
-        fragment: Optional[str] = None,
+        port: int | None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
     ) -> str: ...
 
 class MultiHostUrl(SupportsAllComparisons):
@@ -231,14 +229,14 @@ class MultiHostUrl(SupportsAllComparisons):
         cls,
         *,
         scheme: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        host: Optional[str] = None,
-        hosts: Optional[list[MultiHostHost]] = None,
-        port: Optional[int] = None,
-        path: Optional[str] = None,
-        query: Optional[str] = None,
-        fragment: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        host: str | None = None,
+        hosts: list[MultiHostHost] | None = None,
+        port: int | None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
     ) -> str: ...
 
 @final
@@ -252,7 +250,7 @@ class ValidationError(ValueError):
     def from_exception_data(
         title: str,
         line_errors: list[InitErrorDetails],
-        error_mode: Literal['python', 'json'] = 'python',
+        error_mode: Literal["python", "json"] = "python",
         hide_input: bool = False,
     ) -> ValidationError:
         """
@@ -334,4 +332,4 @@ class TzInfo(datetime.tzinfo):
     def tzname(self, _dt: datetime.datetime | None) -> str | None: ...
     def utcoffset(self, _dt: datetime.datetime | None) -> datetime.timedelta: ...
     def dst(self, _dt: datetime.datetime | None) -> datetime.timedelta: ...
-    def __deepcopy__(self, _memo: dict[Any, Any]) -> 'TzInfo': ...
+    def __deepcopy__(self, _memo: dict[Any, Any]) -> TzInfo: ...

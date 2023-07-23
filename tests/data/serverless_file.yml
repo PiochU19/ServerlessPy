@@ -1,0 +1,55 @@
+configValidationMode: warn
+functions:
+  test-function:
+    handler: test_generate_serverless_file.handler
+    layers:
+    - test-layer
+    - ${cf:spy-layer-${opt:stage}.ServerlesspyLayerExport}
+    module: tests/integration
+  test-route:
+    events:
+    - httpApi:
+        authorizer:
+          name: jwt
+        method: GET
+        path: /test
+    handler: test_generate_serverless_file.handler1
+    layers:
+    - ${cf:spy-layer-${opt:stage}.ServerlesspyLayerExport}
+    module: tests/integration
+package:
+  individually: true
+plugins:
+- serverless-python-requirements
+- serverless-plugin-include-dependencies
+- serverless-plugin-common-excludes
+provider:
+  architecture: arm64
+  httpApi:
+    authorizers:
+      jwt:
+        audience:
+        - abc123
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.${region}.amazonaws.com/eu-central-1_abc123
+        type: jwt
+    cors:
+      allowedHeaders:
+      - Content-Type
+      - Authorization
+      allowedMethods:
+      - GET
+      - POST
+      - OPTIONS
+      - PUT
+      - PATCH
+      - DELETE
+      allowedOrigins:
+      - '*'
+      exposedResponseHeaders:
+      - X-Total-Count
+  name: aws
+  region: us-east-1
+  role: arn:aws:iam::123456789:role/TestLambdaRole
+  runtime: python3.10
+service: lambdas

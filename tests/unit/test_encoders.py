@@ -10,7 +10,7 @@ def test_json_encoder() -> None:
     uid = UUID("a2618752-dc19-4f40-adf5-6173d419f2ed")
     obj = {
         "decimal": Decimal(0.55),
-        "datetime": datetime(2023, 5, 10),
+        "datetime": datetime(2023, 5, 10),  # noqa: DTZ001
         "date": date(2022, 5, 10),
         "uuid": uid,
         "default": 1,

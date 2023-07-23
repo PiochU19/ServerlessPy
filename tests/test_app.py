@@ -5,7 +5,7 @@ from aws_spy.core.schemas import Methods
 
 
 def test_app() -> None:
-    assert __version__ == "0.2.8"
+    assert __version__ == "0.2.11"
 
 
 def test_app_conf(app: SpyAPI, config: ServerlessConfig) -> None:
@@ -26,13 +26,20 @@ def test_register_router(config: ServerlessConfig, method: Methods) -> None:
     router_method = getattr(router, method.value)
 
     @router_method("path", "lambda")
-    def handler() -> None:
+    def handler1() -> None:
+        ...
+
+    @router.function("test-function")
+    def handler2() -> None:
         ...
 
     assert len(router.routes) == 1
+    assert len(router.functions) == 1
     assert len(app.routes) == 0
+    assert len(app.functions) == 0
     assert router.routes["/router/path"][method]
 
     app.register_router(router)
     assert len(app.routes) == 1
+    assert len(app.functions) == 1
     assert app.routes["/api/router/path"][method]

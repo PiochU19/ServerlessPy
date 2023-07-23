@@ -1,11 +1,11 @@
 import json
-from typing import Any, Union
+import typing as t
 
 import pytest
 from pydantic import BaseModel
 
 from aws_spy.core.schemas import SpyRoute
-from aws_spy.responses import ErrorResponse, JSONResponse, RAWResponse
+from aws_spy.responses import JSONResponse
 
 
 class ExampleResponseClass(BaseModel):
@@ -42,7 +42,7 @@ class SameAsExampleResponseClass(BaseModel):
     ],
 )
 def test_json_response(
-    data: BaseModel | dict[str, Any],
+    data: BaseModel | dict[str, t.Any],
     response_class: type[BaseModel],
     expected_response_body: str,
     additional_headers: dict[str, str] | None,
@@ -61,7 +61,7 @@ def test_json_response(
         status_code=202,
         response_class=response_class,
     )
-    response_cls = JSONResponse(data, additional_headers)
+    response_cls = JSONResponse(data, additional_headers=additional_headers)
     response_cls.route = route
     response = response_cls.response
     assert response["statusCode"] == 202

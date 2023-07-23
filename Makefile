@@ -8,14 +8,14 @@
 
 .PHONY: format
 format: .pdm
-	pdm run isort $(sources)
-	pdm run black $(sources)
-	pdm run ruff --fix $(sources)
+	pdm run isort --skip aws_spy/layer $(sources)
+	pdm run black --exclude aws_spy/layer $(sources)
+	pdm run ruff --exclude aws_spy/layer --fix $(sources)
 
 .PHONY: lint
 lint: .pdm
-	pdm run ruff $(sources)
-	pdm run black $(sources) --check --diff
+	pdm run ruff $(sources) --exclude aws_spy/layer
+	pdm run black $(sources) --check --diff --exclude aws_spy/layer
 
 .PHONY: test
 test: .pdm

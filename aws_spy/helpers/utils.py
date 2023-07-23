@@ -21,7 +21,7 @@ def load_app_from_string(import_string: str) -> SpyAPI:
         module = importlib.import_module(module_string)
     except ImportError as exc:
         if exc.name != module_string:
-            raise exc from None
+            raise exc from None  # pragma: no cover
         msg = f'Could not import "{module_string}"'
         raise LoadAppFromStringError(msg) from None
 

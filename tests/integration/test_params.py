@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Union
 from uuid import UUID
 
 import pytest
@@ -62,9 +61,9 @@ def test_same_param_names(app: SpyAPI, method: Methods) -> None:
         [int, int, True, None],
         [ExampleEnum, ExampleEnum, True, ["example"]],
         [UUID, UUID, True, None],
-        [Union[str, None], str, False, None],
-        [Union[ExampleEnum, None], ExampleEnum, False, ["example"]],
-        [Union[str, int, ExampleEnum, None], str, False, None],  # only first arg
+        [str | None, str, False, None],
+        [ExampleEnum | None, ExampleEnum, False, ["example"]],
+        [str | int | ExampleEnum | None, str, False, None],  # only first arg
     ],
 )
 def test_params(
@@ -75,7 +74,7 @@ def test_params(
     route_param: str,
     param_annotation: type,
     expected_annotation: type,
-    is_required: bool,
+    is_required: bool,  # noqa: FBT001
     enum: list[str] | None,
 ) -> None:
     app_method = getattr(app, method.value)

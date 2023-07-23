@@ -1,17 +1,18 @@
 import sys
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import timezone
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, TypeVar, Union
-
-if sys.version_info < (3, 8):
-    from typing_extensions import Protocol, runtime_checkable
-else:
-    from typing import Protocol, runtime_checkable
-
-if sys.version_info < (3, 9):
-    from typing_extensions import Annotated, Literal
-else:
-    from typing import Annotated, Literal
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 if sys.version_info < (3, 10):
     EllipsisType = type(Ellipsis)
@@ -25,29 +26,29 @@ else:
 
 
 __all__ = (
-    'BaseMetadata',
-    'GroupedMetadata',
-    'Gt',
-    'Ge',
-    'Lt',
-    'Le',
-    'Interval',
-    'MultipleOf',
-    'MinLen',
-    'MaxLen',
-    'Len',
-    'Timezone',
-    'Predicate',
-    'LowerCase',
-    'UpperCase',
-    'IsDigits',
-    '__version__',
+    "BaseMetadata",
+    "GroupedMetadata",
+    "Gt",
+    "Ge",
+    "Lt",
+    "Le",
+    "Interval",
+    "MultipleOf",
+    "MinLen",
+    "MaxLen",
+    "Len",
+    "Timezone",
+    "Predicate",
+    "LowerCase",
+    "UpperCase",
+    "IsDigits",
+    "__version__",
 )
 
-__version__ = '0.5.0'
+__version__ = "0.5.0"
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 # arguments that start with __ are considered
@@ -185,9 +186,10 @@ class GroupedMetadata(Protocol):
             # Basic ABC like functionality without the complexity of an ABC
             super().__init_subclass__(*args, **kwargs)
             if cls.__iter__ is GroupedMetadata.__iter__:
-                raise TypeError("Can't subclass GroupedMetadata without implementing __iter__")
+                msg = "Can't subclass GroupedMetadata without implementing __iter__"
+                raise TypeError(msg)
 
-        def __iter__(self) -> Iterator[BaseMetadata]:  # noqa: F811
+        def __iter__(self) -> Iterator[BaseMetadata]:
             raise NotImplementedError  # more helpful than "None has no attribute..." type errors
 
 
@@ -199,10 +201,10 @@ class Interval(GroupedMetadata):
     are interpreted the same way as the single-bound constraints.
     """
 
-    gt: Union[SupportsGt, None] = None
-    ge: Union[SupportsGe, None] = None
-    lt: Union[SupportsLt, None] = None
-    le: Union[SupportsLe, None] = None
+    gt: SupportsGt | None = None
+    ge: SupportsGe | None = None
+    lt: SupportsLt | None = None
+    le: SupportsLe | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         """Unpack an Interval into zero or more single-bounds."""
@@ -227,7 +229,7 @@ class MultipleOf(BaseMetadata):
     and libraries to carefully document which they implement.
     """
 
-    multiple_of: Union[SupportsDiv, SupportsMod]
+    multiple_of: SupportsDiv | SupportsMod
 
 
 @dataclass(frozen=True, **SLOTS)
@@ -259,7 +261,7 @@ class Len(GroupedMetadata):
     """
 
     min_length: Annotated[int, Ge(0)] = 0
-    max_length: Optional[Annotated[int, Ge(0)]] = None
+    max_length: Annotated[int, Ge(0)] | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         """Unpack a Len into zone or more single-bounds."""
@@ -283,7 +285,7 @@ class Timezone(BaseMetadata):
     a symptom of poor design.
     """
 
-    tz: Union[str, timezone, EllipsisType, None]
+    tz: str | timezone | EllipsisType | None
 
 
 @dataclass(frozen=True, **SLOTS)

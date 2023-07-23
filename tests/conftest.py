@@ -1,3 +1,6 @@
+import os
+import typing as t
+
 import pytest
 
 from aws_spy import (
@@ -55,3 +58,11 @@ def config(provider: Provider) -> ServerlessConfig:
 @pytest.fixture
 def app(config: ServerlessConfig) -> SpyAPI:
     return SpyAPI(config=config)
+
+
+@pytest.fixture
+def build_data_path() -> t.Callable[[str], str]:
+    def _build_data_path(file_name: str) -> str:
+        return os.path.join(os.path.dirname(__file__), "data", file_name)
+
+    return _build_data_path
