@@ -1,8 +1,8 @@
+import typing as t
 from abc import ABC, abstractmethod
-from typing import Any
 
+import typing_extensions as te
 from pydantic import BaseModel
-from typing_extensions import Self  # type: ignore
 
 
 class BaseResponseSPY(ABC):
@@ -10,5 +10,5 @@ class BaseResponseSPY(ABC):
 
     @property
     @abstractmethod
-    def response(self: Self) -> dict[str, Any]:
+    def response(self: te.Self) -> dict[str, t.Any]:
         raise NotImplementedError  # pragma: no cover

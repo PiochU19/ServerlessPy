@@ -1,9 +1,9 @@
 import json
+import typing as t
 from enum import Enum
-from typing import Any
 
+import typing_extensions as te
 from pydantic import BaseModel
-from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.encoders import JSONEncoder
 from aws_spy.core.responses import BaseResponseSPY
@@ -12,18 +12,15 @@ from aws_spy.core.schemas import SpyRoute
 
 class ContentType(str, Enum):
     JSON = "application/json"
-    XML = "application/xml"
-    PLAIN = "text/plain"
-    HTML = "text/html"
 
 
 class JSONResponse(BaseResponseSPY):
     def __init__(
-        self: Self,
-        data: dict[str, Any] | BaseModel,
+        self: te.Self,
+        data: dict[str, t.Any] | BaseModel,
         *,
         status_code: int | None = None,
-        additional_headers: dict[str, str] | None = None,
+        additional_headers: dict[str, t.Any] | None = None,
     ) -> None:
         self.data = data
         self.status_code = status_code
@@ -31,7 +28,7 @@ class JSONResponse(BaseResponseSPY):
         self.route: SpyRoute | None = None
 
     @property
-    def response(self: Self) -> dict[str, Any]:
+    def response(self: te.Self) -> dict[str, t.Any]:
         headers = {
             "Content-Type": ContentType.JSON.value,
         }
@@ -67,18 +64,18 @@ class JSONResponse(BaseResponseSPY):
 
 
 class RAWResponse(BaseResponseSPY):
-    def __init__(self: Self, response: dict[str, Any]) -> None:
+    def __init__(self: te.Self, response: dict[str, t.Any]) -> None:
         self.response_ = response
 
     @property
-    def response(self: Self) -> dict[str, Any]:
+    def response(self: te.Self) -> dict[str, t.Any]:
         return self.response_
 
 
 class ErrorResponse(BaseResponseSPY):
     def __init__(
-        self: Self,
-        errors: list[str],
+        self: te.Self,
+        errors: str | list[str],
         status_code: int = 400,
         additional_headers: dict[str, str] | None = None,
     ) -> None:
@@ -87,17 +84,24 @@ class ErrorResponse(BaseResponseSPY):
         self.additional_headers = additional_headers
 
     @property
-    def response(self: Self) -> dict[str, Any]:
+    def response(self: te.Self) -> dict[str, t.Any]:
         headers = {
             "Content-Type": ContentType.JSON.value,
         }
         if self.additional_headers is not None:
             headers.update(self.additional_headers)
 
+        if isinstance(self.errors, str):
+            body = {"message": self.errors}
+        elif isinstance(self.errors, list) and len(self.errors) == 1:
+            body = {"message": self.errors[0]}
+        else:
+            body = {"errors": [{"message": error} for error in self.errors]}  # type: ignore
+
         return {
             "statusCode": self.status_code,
             "body": json.dumps(
-                {"errors": [{"message": error} for error in self.errors]},
+                body,
                 cls=JSONEncoder,
                 ensure_ascii=False,
             ),

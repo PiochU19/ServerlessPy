@@ -1,11 +1,15 @@
+import typing as t
 from functools import wraps
-from typing import Any
 
+import typing_extensions as te
 from pydantic import BaseModel
-from typing_extensions import Self
 
 from aws_spy.core.event_utils import export_params_from_event, export_request_body
-from aws_spy.core.exceptions import FunctionDefinitionError, RouteDefinitionError
+from aws_spy.core.exceptions import (
+    BaseSpyError,
+    FunctionDefinitionError,
+    RouteDefinitionError,
+)
 from aws_spy.core.responses import BaseResponseSPY
 from aws_spy.core.schemas import (
     LH,
@@ -23,7 +27,7 @@ class _SPY:
     functions: list[SpyFunction]
     function_unique_ids: set[str]
 
-    def __init__(self: Self, prefix: str | None = None) -> None:
+    def __init__(self: te.Self, prefix: str | None = None) -> None:
         self.routes = {}
         self.functions = []
         self.function_unique_ids = set()
@@ -31,21 +35,21 @@ class _SPY:
             prefix = "/" + prefix
         self.prefix = prefix or ""
 
-    def register_router(self: Self, router: Any) -> None:
+    def register_router(self: te.Self, router: t.Any) -> None:
         for path, methods in router.routes.items():
             for method, route in methods.items():
                 self.add_route(path, method, route)
         for function in router.functions:
             self.add_function(function)
 
-    def add_function(self: Self, function: SpyFunction) -> None:
+    def add_function(self: te.Self, function: SpyFunction) -> None:
         if function.name in self.function_unique_ids:
             msg = f"There is already {function.name} lambda registered."
             raise FunctionDefinitionError(msg)
         self.function_unique_ids.add(function.name)
         self.functions.append(function)
 
-    def add_route(self: Self, path: str, method: Methods, route: SpyRoute) -> None:
+    def add_route(self: te.Self, path: str, method: Methods, route: SpyRoute) -> None:
         if not path.startswith("/"):
             path = "/" + path
         path = self.prefix + path
@@ -64,7 +68,7 @@ class _SPY:
         self.routes[path][method] = route
 
     def function(
-        self: Self,
+        self: te.Self,
         name: str,
         *,
         response_class: type[BaseModel] | None = None,
@@ -84,7 +88,7 @@ class _SPY:
             self.add_function(function)
 
             @wraps(handler)
-            def wrapper(*args) -> dict[str, Any]:
+            def wrapper(*args) -> dict[str, t.Any]:
                 if function.skip_validation:
                     return handler(*args)
                 return handler(*args)
@@ -94,7 +98,7 @@ class _SPY:
         return decorartor
 
     def route(
-        self: Self,
+        self: te.Self,
         *,
         method: Methods,
         path: str,
@@ -128,7 +132,7 @@ class _SPY:
             self.add_route(path, method, route)
 
             @wraps(handler)
-            def wrapper(*args) -> dict[str, Any]:
+            def wrapper(*args) -> dict[str, t.Any]:
                 if route.skip_validation:
                     return handler(*args)
                 event = args[0]
@@ -154,7 +158,13 @@ class _SPY:
                 if route.add_context:
                     kwargs["context"] = context
 
-                return_obj = handler(**kwargs)
+                try:
+                    return_obj = handler(**kwargs)
+                except BaseSpyError as e:
+                    return ErrorResponse(
+                        e.error, status_code=e.status_code, additional_headers=e.additional_headers
+                    ).response
+
                 if not isinstance(return_obj, BaseResponseSPY):
                     return_obj = JSONResponse(return_obj)
                 return_obj.route = route
@@ -166,7 +176,7 @@ class _SPY:
         return decorator
 
     def get(
-        self: Self,
+        self: te.Self,
         path: str,
         name: str,
         *,
@@ -196,7 +206,7 @@ class _SPY:
         )
 
     def post(
-        self: Self,
+        self: te.Self,
         path: str,
         name: str,
         *,
@@ -226,7 +236,7 @@ class _SPY:
         )
 
     def delete(
-        self: Self,
+        self: te.Self,
         path: str,
         name: str,
         *,
@@ -256,7 +266,7 @@ class _SPY:
         )
 
     def put(
-        self: Self,
+        self: te.Self,
         path: str,
         name: str,
         *,
@@ -286,7 +296,7 @@ class _SPY:
         )
 
     def patch(
-        self: Self,
+        self: te.Self,
         path: str,
         name: str,
         *,
@@ -318,10 +328,10 @@ class _SPY:
 
 class SpyAPI(_SPY):
     def __init__(
-        self: Self,
+        self: te.Self,
         *,
         config: ServerlessConfig,
-        environment: dict[str, Any] | None = None,
+        environment: dict[str, t.Any] | None = None,
         title: str | None = None,
         version: str | None = None,
         prefix: str | None = None,
@@ -335,5 +345,5 @@ class SpyAPI(_SPY):
 
 
 class SpyRouter(_SPY):
-    def __init__(self: Self, prefix: str | None = None) -> None:
+    def __init__(self: te.Self, prefix: str | None = None) -> None:
         super().__init__(prefix)

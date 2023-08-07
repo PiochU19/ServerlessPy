@@ -1,11 +1,11 @@
 import os
 import sys
+import typing as t
 from argparse import ArgumentParser
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
 from shutil import copyfile, copytree
-from typing import get_args
 
 import yaml  # type: ignore
 
@@ -40,7 +40,7 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:  # pragma
                     return
 
             is_required = is_type_required(argument_type_hint)
-            argument_type = argument_type_hint if is_required else get_args(argument_type_hint)[0]
+            argument_type = argument_type_hint if is_required else t.get_args(argument_type_hint)[0]
 
             parser.add_argument(
                 f"-{argument_name[0]}",

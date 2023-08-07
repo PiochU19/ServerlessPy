@@ -1,12 +1,12 @@
 import inspect
 import os
+import typing as t
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, TypeVar
 
+import typing_extensions as te
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.schemas_utils import (
@@ -18,7 +18,7 @@ from aws_spy.core.schemas_utils import (
 # from aws_spy.dependencies import DependencySchema, get_dependencies
 
 
-LHReturnType = TypeVar("LHReturnType")
+LHReturnType = t.TypeVar("LHReturnType")
 LH = Callable[..., LHReturnType]  # Lambda Handler
 Decorator = Callable[[LH], LH]
 MANDATORY_PLUGINS = [
@@ -55,12 +55,12 @@ class _CloudFormationRef(BaseModel):
     stack_name: str
     export_name: str
 
-    def __str__(self: Self) -> str:
+    def __str__(self: te.Self) -> str:
         return f"${{cf:{self.stack_name}-${{opt:stage}}.{self.export_name}}}"
 
 
 class CloudFormationRef(_CloudFormationRef):
-    def __new__(cls: type[Self], stack_name: str, export_name: str) -> str:  # type: ignore
+    def __new__(cls: type[te.Self], stack_name: str, export_name: str) -> str:  # type: ignore
         instance = _CloudFormationRef(stack_name=stack_name, export_name=export_name)
         return str(instance)
 
@@ -69,12 +69,12 @@ class _JSONFileRef(BaseModel):
     file_path: str
     field: str
 
-    def __str__(self: Self) -> str:
+    def __str__(self: te.Self) -> str:
         return f"${{file({self.file_path}):{self.field}}}"
 
 
 class JSONFileRef(_JSONFileRef):
-    def __new__(cls: type[Self], file_path: str, field: str) -> str:  # type: ignore
+    def __new__(cls: type[te.Self], file_path: str, field: str) -> str:  # type: ignore
         instance = _JSONFileRef(file_path=file_path, field=field)
         return str(instance)
 
@@ -92,7 +92,7 @@ class SpyBaseModel(BaseModel):
     response_class: type[BaseModel] | None = Field(None)
 
     @field_validator("layers", mode="before")
-    def set_layers(cls: type[Self], layers: list[str] | None) -> list[str]:  # type: ignore  # noqa: N805
+    def set_layers(cls: type[te.Self], layers: list[str] | None) -> list[str]:  # type: ignore  # noqa: N805
         return layers or []
 
 
@@ -115,23 +115,23 @@ class SpyRoute(SpyBaseModel):
 
     @model_validator(mode="before")
     def set_status_code(  # type: ignore
-        cls: type[Self],  # noqa: N805
-        values: dict[str, Any],
-    ) -> dict[str, Any]:
+        cls: type[te.Self],  # noqa: N805
+        values: dict[str, t.Any],
+    ) -> dict[str, t.Any]:
         if values.get("status_code") is None:
             values["status_code"] = DEFAULT_STATUS_CODES[values["method"]]
 
         return values
 
     @field_validator("summary", mode="before")
-    def set_summary(cls: type[Self], summary: str | None) -> str:  # type: ignore  # noqa: N805
+    def set_summary(cls: type[te.Self], summary: str | None) -> str:  # type: ignore  # noqa: N805
         return summary or "API endpoint"
 
     @model_validator(mode="after")
     def validate_handler_params(  # type: ignore
-        cls: type[Self],  # noqa: N805
-        model: Self,
-    ) -> dict[str, Any]:
+        cls: type[te.Self],  # noqa: N805
+        model: te.Self,
+    ) -> dict[str, t.Any]:
         method: Methods = model.method
         path: str = model.path
         handler: LH = model.handler
@@ -163,10 +163,6 @@ class SpyRoute(SpyBaseModel):
                 msg = f'Your {path_arg} path parameter is missing in {method.upper()} method on "{path}" path!'
                 raise RouteDefinitionError(msg)
 
-        if method in (Methods.GET, Methods.DELETE) and handler_args.request_body:
-            msg = f'{method.upper()} method on "{path}" cannot have request body!'
-            raise RouteDefinitionError(msg)
-
         if handler_args.request_body:
             model.request_body = handler_args.request_body
             model.request_body_arg_name = handler_args.request_body_arg_name
@@ -187,7 +183,7 @@ def build_cognito_issue_url(user_pool_id: str | CloudFormationRef | JSONFileRef)
 
 
 class Authorizer(BaseModel):
-    type: Literal["jwt"] = Field("jwt", frozen=True)  # noqa: A003
+    type: t.Literal["jwt"] = Field("jwt", frozen=True)  # noqa: A003
     identitySource: str = "$request.header.Authorization"  # noqa: N815
     issuerUrl: str  # noqa: N815
     audience: list[str | CloudFormationRef | JSONFileRef]
@@ -213,9 +209,9 @@ class VPC(BaseModel):
 class Function(BaseModel):
     handler: str
     module: str
-    events: list[dict[str, Any]] | None = Field(None)
+    events: list[dict[str, t.Any]] | None = Field(None)
     layers: list[str | CloudFormationRef | JSONFileRef]
-    environment: dict[str, Any] | None = Field(None)
+    environment: dict[str, t.Any] | None = Field(None)
 
     @staticmethod
     def generate_rel_path_for_function(route: SpyRoute) -> str:
@@ -246,7 +242,7 @@ class Function(BaseModel):
         )
 
     @classmethod
-    def from_function(cls: type[Self], *, function: SpyFunction) -> Self:  # type: ignore
+    def from_function(cls: type[te.Self], *, function: SpyFunction) -> te.Self:  # type: ignore
         rel_path = cls.generate_rel_path_for_function(function)
         return cls(
             handler=cls.build_handler_string(rel_path, function.handler.__name__),
@@ -255,9 +251,9 @@ class Function(BaseModel):
         )
 
     @classmethod
-    def from_route(cls: type[Self], *, route: SpyRoute, path: str, method: Methods) -> Self:  # type: ignore
+    def from_route(cls: type[te.Self], *, route: SpyRoute, path: str, method: Methods) -> te.Self:  # type: ignore
         rel_path = cls.generate_rel_path_for_function(route)
-        http_api_event: dict[str, Any] = {"path": path, "method": method.upper()}
+        http_api_event: dict[str, t.Any] = {"path": path, "method": method.upper()}
         if route.authorizer:
             http_api_event["authorizer"] = {"name": route.authorizer}
 
@@ -270,10 +266,10 @@ class Function(BaseModel):
 
 
 class Provider(BaseModel):
-    name: Literal["aws"] = Field("aws", frozen=True)
-    runtime: Literal["python3.10"] = Field("python3.10", frozen=True)
+    name: t.Literal["aws"] = Field("aws", frozen=True)
+    runtime: t.Literal["python3.10"] = Field("python3.10", frozen=True)
     region: str = "eu-central-1"
-    architecture: Literal["arm64", "x86_64"] = Field("arm64", frozen=True)  # pydantic_core
+    architecture: t.Literal["arm64", "x86_64"] = Field("arm64", frozen=True)  # pydantic_core
     role: str | CloudFormationRef | JSONFileRef | None = Field(None)
     httpApi: HTTPApi | None = Field(None)  # noqa: N815
     vpc: VPC | None = Field(None)
@@ -281,18 +277,18 @@ class Provider(BaseModel):
 
 class ServerlessConfig(BaseModel):
     service: str
-    custom: dict[str, Any] | None = Field(None)
+    custom: dict[str, t.Any] | None = Field(None)
     plugins: list[str]
-    configValidationMode: Literal["error", "warn"] = Field("warn", frozen=True)  # noqa: N815
+    configValidationMode: t.Literal["error", "warn"] = Field("warn", frozen=True)  # noqa: N815
     provider: Provider
     package: dict[str, bool] = Field({"individually": True})
     functions: dict[str, Function] | None = Field(None)
 
     @model_validator(mode="before")
     def set_default_plugins(  # type: ignore
-        cls: type[Self],  # noqa: N805
-        values: dict[str, Any],
-    ) -> dict[str, Any]:
+        cls: type[te.Self],  # noqa: N805
+        values: dict[str, t.Any],
+    ) -> dict[str, t.Any]:
         provided_plugins = values.get("plugins")
         provided_plugins = provided_plugins if provided_plugins is not None else []
         values["plugins"] = list(set(provided_plugins + MANDATORY_PLUGINS))

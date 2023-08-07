@@ -1,6 +1,6 @@
 import json
+import typing as t
 from enum import Enum
-from typing import Any, Literal
 
 import pytest
 from pydantic import BaseModel, Field
@@ -94,10 +94,10 @@ def gpm(
     ],
 )
 def test_export_params_from_event_success(
-    in_event_params: dict[str, Any] | None,
+    in_event_params: dict[str, t.Any] | None,
     expected_params: list[ParamSchema],
-    type_: Literal["path", "header", "query"],
-    expected_params_result: dict[str, Any],
+    type_: t.Literal["path", "header", "query"],
+    expected_params_result: dict[str, t.Any],
     expected_errors_result: list[str],
 ) -> None:
     params, errors = export_params_from_event(in_event_params, expected_params, type_)

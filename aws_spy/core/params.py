@@ -1,7 +1,7 @@
 from abc import ABC
 from enum import Enum
 
-from typing_extensions import Self  # type: ignore
+import typing_extensions as te
 
 
 class ParamType(str, Enum):
@@ -13,7 +13,7 @@ class ParamType(str, Enum):
 class Param(ABC):
     in_: ParamType
 
-    def __init__(self: Self, name: str | None) -> None:
+    def __init__(self: te.Self, name: str | None) -> None:
         self.name = name
 
 

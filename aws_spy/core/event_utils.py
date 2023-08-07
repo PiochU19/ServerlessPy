@@ -1,18 +1,18 @@
 import json
-from typing import Any, Literal, TypeVar
+import typing as t
 
 from pydantic import BaseModel, ValidationError
 
 from aws_spy.core.schemas_utils import ParamSchema
 
-RequestBodyType = TypeVar("RequestBodyType", bound=BaseModel)
+RequestBodyType = t.TypeVar("RequestBodyType", bound=BaseModel)
 
 
 def export_params_from_event(
-    in_event_params: dict[str, Any] | None,
+    in_event_params: dict[str, t.Any] | None,
     expected_params: list[ParamSchema],
-    type_: Literal["path", "header", "query"],
-) -> tuple[dict[str, Any], list[str]]:
+    type_: t.Literal["path", "header", "query"],
+) -> tuple[dict[str, t.Any], list[str]]:
     if in_event_params is None:
         in_event_params = {}
     args, errors = {}, []
@@ -33,7 +33,7 @@ def export_params_from_event(
 
 def export_request_body(
     body: str, request_body_class: type[RequestBodyType]
-) -> tuple[RequestBodyType | dict[str, Any] | None, list[str]]:
+) -> tuple[RequestBodyType | dict[str, t.Any] | None, list[str]]:
     try:
         body = json.loads(body)
     except json.JSONDecodeError:

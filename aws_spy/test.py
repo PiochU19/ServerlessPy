@@ -1,22 +1,23 @@
 import json
-from typing import Any
+import typing as t
 
+import typing_extensions as te
 from pydantic import BaseModel
-from typing_extensions import Self  # type: ignore
 
 from aws_spy.core.schemas import LH, Methods
 
 
-class Response(BaseModel):
+class APIResponse(BaseModel):
     body: str
-    status_code: int
-    raw: dict[str, Any]
+    status_code: int | None
+    headers: dict[str, t.Any] | None
+    raw: dict[str, t.Any]
 
     @property
-    def json_body(self: Self) -> dict[str, Any]:
+    def json(self: te.Self) -> dict[str, t.Any]:
         try:
             return json.loads(self.body)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError:  # pragma: no cover
             return {}
 
 
@@ -25,14 +26,14 @@ class TestClient:
 
     @classmethod
     def post(  # type: ignore
-        cls: type[Self],
+        cls: type[te.Self],
         handler: LH,
         *,
-        body: dict[str, Any] | None = None,
+        body: dict[str, t.Any] | None = None,
         headers: dict[str, str] | None = None,
         query_params: dict[str, str] | None = None,
         path_params: dict[str, str] | None = None,
-    ) -> Response:
+    ) -> APIResponse:
         return cls._call(
             handler,
             cls._build_event(
@@ -46,14 +47,14 @@ class TestClient:
 
     @classmethod
     def delete(  # type: ignore
-        cls: type[Self],
+        cls: type[te.Self],
         handler: LH,
         *,
-        body: dict[str, Any] | None = None,
+        body: dict[str, t.Any] | None = None,
         headers: dict[str, str] | None = None,
         query_params: dict[str, str] | None = None,
         path_params: dict[str, str] | None = None,
-    ) -> Response:
+    ) -> APIResponse:
         return cls._call(
             handler,
             cls._build_event(
@@ -67,14 +68,14 @@ class TestClient:
 
     @classmethod
     def patch(  # type: ignore
-        cls: type[Self],
+        cls: type[te.Self],
         handler: LH,
         *,
-        body: dict[str, Any] | None = None,
+        body: dict[str, t.Any] | None = None,
         headers: dict[str, str] | None = None,
         query_params: dict[str, str] | None = None,
         path_params: dict[str, str] | None = None,
-    ) -> Response:
+    ) -> APIResponse:
         return cls._call(
             handler,
             cls._build_event(
@@ -88,14 +89,14 @@ class TestClient:
 
     @classmethod
     def put(  # type: ignore
-        cls: type[Self],
+        cls: type[te.Self],
         handler: LH,
         *,
-        body: dict[str, Any] | None = None,
+        body: dict[str, t.Any] | None = None,
         headers: dict[str, str] | None = None,
         query_params: dict[str, str] | None = None,
         path_params: dict[str, str] | None = None,
-    ) -> Response:
+    ) -> APIResponse:
         return cls._call(
             handler,
             cls._build_event(
@@ -109,17 +110,19 @@ class TestClient:
 
     @classmethod
     def get(  # type: ignore
-        cls: type[Self],
+        cls: type[te.Self],
         handler: LH,
         *,
+        body: dict[str, t.Any] | None = None,
         headers: dict[str, str] | None = None,
         query_params: dict[str, str] | None = None,
         path_params: dict[str, str] | None = None,
-    ) -> Response:
+    ) -> APIResponse:
         return cls._call(
             handler,
             cls._build_event(
                 method=Methods.GET,
+                body=body,
                 headers=headers,
                 query_params=query_params,
                 path_params=path_params,
@@ -127,19 +130,21 @@ class TestClient:
         )
 
     @staticmethod
-    def _call(handler: LH, event: dict[str, Any]) -> Response:
+    def _call(handler: LH, event: dict[str, t.Any]) -> APIResponse:
         response = handler(event, None)
-        return Response(status_code=response["statusCode"], raw=response, body=response["body"])
+        return APIResponse(
+            status_code=response["statusCode"], raw=response, body=response["body"], headers=response["headers"]
+        )
 
     @staticmethod
     def _build_event(
         *,
         method: Methods,
-        body: dict[str, Any] | None = None,
+        body: dict[str, t.Any] | None = None,
         headers: dict[str, str] | None = None,
         query_params: dict[str, str] | None,
         path_params: dict[str, str] | None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, t.Any]:
         if body is None:
             body = {}
         base_headers = {

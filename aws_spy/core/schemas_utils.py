@@ -1,17 +1,17 @@
 import inspect
 import re
+import typing as t
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, TypeVar
 
+import typing_extensions as te
 from pydantic import BaseModel
-from typing_extensions import Self  # type: ignore
 
 from aws_spy.core import types
 from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.core.params import Param, ParamType
 
-LH = TypeVar("LH", bound=Callable[..., Any])
+LH = t.TypeVar("LH", bound=Callable[..., t.Any])
 
 
 class ParamSchema(BaseModel):
@@ -34,7 +34,7 @@ class HandlerArgs(BaseModel):
     request_body_arg_name: str | None
 
     @property
-    def count(self: Self) -> int:
+    def count(self: te.Self) -> int:
         return len(self.query) + len(self.path) + len(self.header) + (1 if self.request_body is not None else 0)
 
 

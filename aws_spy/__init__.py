@@ -3,6 +3,7 @@
 __version__ = "0.2.11"
 
 from aws_spy import responses
+from aws_spy.core.exceptions import BaseSpyError
 from aws_spy.core.logging import logger
 from aws_spy.core.params_alias import Header, Path, Query
 from aws_spy.core.schemas import (
@@ -35,4 +36,5 @@ __all__ = (
     "CloudFormationRef",
     "logger",
     "responses",
+    "BaseSpyError",
 )
