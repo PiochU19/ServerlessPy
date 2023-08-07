@@ -2,11 +2,14 @@ import os
 import typing as t
 from pathlib import Path
 
+import pytest
 import yaml
 from deepdiff import DeepDiff
 
 from aws_spy import SpyAPI
+from aws_spy.core.exceptions import RouteDefinitionError
 from aws_spy.helpers.cli import generate_serverless_file
+from aws_spy.helpers.exceptions import WrongArgumentError
 
 
 def are_two_yaml_files_same(file_path_1: str, file_path_2: str) -> bool:
@@ -43,3 +46,22 @@ def test_generate_file(app: SpyAPI, build_data_path: t.Callable[[str], str], tmp
     generate_serverless_file(app, file_path)
     assert not are_two_yaml_files_same(file_path, sls_file_wout_functions)
     assert are_two_yaml_files_same(file_path, sls_file)
+
+
+def test_generate_file_wrong_file(app: SpyAPI) -> None:
+    file_path = "serverless.txt"
+
+    with pytest.raises(WrongArgumentError, match="File is not YAML file."):
+        generate_serverless_file(app, file_path)
+
+
+def test_generate_file_wrong_authorizer(app: SpyAPI) -> None:
+    authorizer = "jwt1"
+
+    @app.get("/", "test-route", authorizer=authorizer)
+    def handler() -> None:
+        ...
+
+    file_path = "serverless.yml"
+    with pytest.raises(RouteDefinitionError, match=f"Authorizer {authorizer} not defined"):
+        generate_serverless_file(app, file_path)

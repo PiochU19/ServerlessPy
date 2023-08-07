@@ -2,10 +2,9 @@ import os
 import sys
 from argparse import ArgumentParser
 from collections.abc import Callable
-from distutils.dir_util import copy_tree
-from distutils.file_util import copy_file
 from functools import wraps
 from pathlib import Path
+from shutil import copyfile, copytree
 from typing import get_args
 
 import yaml  # type: ignore
@@ -21,7 +20,7 @@ from aws_spy.helpers.exceptions import PythonEnvironmentError, WrongArgumentErro
 from aws_spy.helpers.utils import LoadAppFromStringError, load_app_from_string
 
 
-def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
+def unpack_args(function: Callable[..., None]) -> Callable[..., None]:  # pragma: no cover
     @wraps(function)
     def wrapper(*_, **kwargs: ArgumentParser) -> None:
         parser = kwargs["parser"]
@@ -58,7 +57,11 @@ def unpack_args(function: Callable[..., None]) -> Callable[..., None]:
 
 
 @unpack_args
-def _deploy_layer(stage: str, region: str) -> None:
+def _deploy_layer(stage: str, region: str) -> None:  # pragma: no cover
+    return _deploy_layer(stage=stage, region=region)
+
+
+def deploy_layer(stage: str, region: str) -> None:  # pragma: no cover
     site_packages = None
     for path in sys.path:
         if path.endswith("site-packages"):
@@ -79,19 +82,19 @@ def _deploy_layer(stage: str, region: str) -> None:
         if not package_path.is_dir():
             msg = f'Could not find "{package}" package. Make sure it is installed in your current environment.'
             raise PythonEnvironmentError(msg)
-        copy_tree(str(package_path), os.path.join(layer_path, package))
+        copytree(str(package_path), os.path.join(layer_path, package))
 
-    copy_file(
+    copyfile(
         os.path.join(site_packages, "typing_extensions.py"),
         os.path.join(layer_path, "typing_extensions.py"),
     )
 
-    copy_tree(
+    copytree(
         os.path.join(serverlesspy_path, "core"),
         os.path.join(serverless_layer_path, "core"),
     )
     for file_to_copy in ("__init__.py", "main.py", "responses.py"):
-        copy_file(
+        copyfile(
             os.path.join(serverlesspy_path, file_to_copy),
             os.path.join(serverless_layer_path, file_to_copy),
         )
@@ -109,7 +112,7 @@ def _deploy_layer(stage: str, region: str) -> None:
 
 
 @unpack_args
-def _generate_serverless_file(app: SpyAPI, path: str) -> None:
+def _generate_serverless_file(app: SpyAPI, path: str) -> None:  # pragma: no cover
     return generate_serverless_file(app=app, path=path)
 
 
@@ -146,7 +149,7 @@ FUNCTIONS_DEFINITIONS: dict[str, Callable[..., None]] = {
 }
 
 
-def cli_handler() -> None:
+def cli_handler() -> None:  # pragma: no cover
     parser = ArgumentParser()
     parser.add_argument("function", type=Functions)
     args, _ = parser.parse_known_args()

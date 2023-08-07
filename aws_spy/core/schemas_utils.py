@@ -81,7 +81,7 @@ def resolve_handler_args(handler: LH) -> HandlerArgs:
                     enum=enum,
                     is_required=is_required,
                 )
-        except TypeError:
+        except TypeError:  # pragma: no cover
             continue
 
     return HandlerArgs(

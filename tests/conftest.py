@@ -7,6 +7,7 @@ from aws_spy import (
     CORS,
     Authorizer,
     HTTPApi,
+    JSONFileRef,
     Provider,
     ServerlessConfig,
     SpyAPI,
@@ -18,7 +19,7 @@ from aws_spy import (
 def authorizer() -> Authorizer:
     return Authorizer(
         issuerUrl=build_cognito_issue_url("eu-central-1_abc123"),
-        audience=["abc123"],
+        audience=["abc123", JSONFileRef("file.json", "something")],
     )
 
 

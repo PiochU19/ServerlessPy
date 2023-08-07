@@ -13,6 +13,7 @@ provider:
       jwt:
         audience:
         - abc123
+        - ${file(file.json):something}
         identitySource: $request.header.Authorization
         issuerUrl: https://cognito-idp.${region}.amazonaws.com/eu-central-1_abc123
         type: jwt

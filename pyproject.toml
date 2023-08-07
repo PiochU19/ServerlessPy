@@ -118,7 +118,8 @@ testing = [
     "coverage[toml]",
     "dirty-equals",
     "pytest",
-    "deepdiff>=6.3.1"
+    "deepdiff>=6.3.1",
+    "polyfactory>=2.6.3"
 ]
 mypy = [
     "mypy",
