@@ -39,12 +39,16 @@ def test_api_functions(method: Methods, app: SpyAPI) -> None:
 
     @app_method(path, "lambda", authorizer="jwt", use_vpc=False, status_code=200, response_class=ExampleResponse)
     def handler(
+        event,
+        context,
         request: ExampleRequest,
         user_id: int = Path(),  # noqa: B008
         car_id: uuid.UUID = Path(),  # noqa: B008
         user_id_header: int = Header("user_id"),  # noqa: B008
         car_id_query: uuid.UUID = Query("car_id"),  # noqa: B008
     ) -> JSONResponse:
+        assert event
+        assert context is None
         assert isinstance(user_id, int)
         assert isinstance(car_id, uuid.UUID)
         assert isinstance(car_id_query, uuid.UUID)
@@ -85,7 +89,7 @@ def test_api_functions_raise_error(method: Methods, app: SpyAPI) -> None:
         raise BaseSpyError([message], status_code=402)
         return JSONResponse(ExampleResponseFactory.build(), status_code=201, additional_headers={"X-Total-Count": 1})
 
-    response1: APIResponse = client_method(handler)
+    response1: APIResponse = client_method(handler1)
     assert response1.status_code == 402
     assert response1.json == {"message": "Something went wrong"}
 
@@ -99,6 +103,21 @@ def test_api_functions_raise_error(method: Methods, app: SpyAPI) -> None:
         )
         return JSONResponse(ExampleResponseFactory.build(), status_code=201, additional_headers={"X-Total-Count": 1})
 
-    response2: APIResponse = client_method(handler)
+    response2: APIResponse = client_method(handler2)
     assert response2.status_code == 404
     assert response2.json == {"errors": [{"message": "Something went wrong"}, {"message": "Something else went wrong"}]}
+
+
+@pytest.mark.parametrize("method", list(Methods))
+def test_api_functions_without_response(method: Methods, app: SpyAPI) -> None:
+    app_method = getattr(app, method.value)
+    client_method = getattr(client, method.value)
+
+    @app_method("/path", "lambda", status_code=201)
+    def handler():
+        return ExampleResponseFactory.build()
+
+    response: APIResponse = client_method(handler)
+    assert response.status_code == 201
+    assert ExampleResponse(**response.json)
+    assert response.headers == {"Content-Type": "application/json"}

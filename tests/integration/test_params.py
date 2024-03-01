@@ -96,3 +96,17 @@ def test_params(
     params = getattr(route, route_param)
     assert len(params) == 1
     assert params[0] == expected_param
+
+
+@pytest.mark.parametrize("method", METHODS)
+def test_path_param_missing(app: SpyAPI, method: Methods) -> None:
+    app_method = getattr(app, method.value)
+    path = "/{user_id}"
+    with pytest.raises(
+        RouteDefinitionError,
+        match=("You did not specify user_id in your handler arguments!"),
+    ):
+
+        @app_method(path, "lambda")
+        def handler() -> None:
+            ...
